@@ -7,6 +7,27 @@ class Dir:
 
 class Cell:
     EMPTY, RED_FILLED, RED_EMPTY, WHITE_FILLED, WHITE_EMPTY = range(5)
+    RED, WHITE, FILLED, UNFILLED = range(4)
+
+    @staticmethod
+    def color(cell):
+        if cell == Cell.EMPTY:
+            return Cell.EMPTY
+
+        if cell == Cell.RED_FILLED or cell == Cell.RED_EMPTY:
+            return Cell.RED
+        else:
+            return Cell.WHITE
+
+    @staticmethod
+    def fill(cell):
+        if cell == Cell.EMPTY:
+            return Cell.EMPTY
+
+        if cell == Cell.RED_FILLED or cell == Cell.WHITE_FILLED:
+            return Cell.FILLED
+        else:
+            return Cell.UNFILLED
 
 
 class Orientation:
@@ -92,6 +113,7 @@ class DoubleCard:
         # get move from player
         valid_input = False
         while not valid_input:
+            try:
                 move = input("Enter your move (0 orientation column row)\n").split()
                 if not self.recycling_mode:
 
@@ -117,14 +139,25 @@ class DoubleCard:
                     row = row_val
 
                     valid_input = True
+            except:
+                print('Error input invalid')
 
+        if not self.recycling_mode:
+            # play card
+            if self.play_card(row, col, orientation):
+                print('Played a card at coordinate {}:{}'.format(move[2], row))
+                self.turn_number += 1
+                # If players have each used up all 12 of their cards, start recycling cards on board
+                if self.turn_number > 24:
+                    self.recycling_mode = True
+            else:
+                print('ILLEGAL MOVE')
+                self.next_turn()
 
-        # play card
-        if self.play_card(row, col, orientation):
-            print('Played a card at coordinate {}:{}'.format(move[2], row))
-        else:
-            print('ILLEGAL MOVE')
+        # Print Board
         self.visualize_board()
+
+        # set next player's turn
         self.active_player = not self.active_player
 
     def play_card(self, row, col, orientation):
@@ -137,16 +170,15 @@ class DoubleCard:
         """
 
         if self.valid_move(row, col, orientation, self.board):
+                # Place card in the board
+                self.board[row][col] = (orientation.cell1, orientation.dir1)
+                self.board[row + orientation.offset[0]][col + orientation.offset[1]] =\
+                    (orientation.cell2, orientation.dir2)
 
                 # Check if this move triggers a victory condition
                 if self.victory_move(row, col, orientation, self.board):
                     print("Victory condition was met!")
                     self.game_over = True
-
-                # Place card in the board
-                self.board[row][col] = (orientation.cell1, orientation.dir1)
-                self.board[row + orientation.offset[0]][col + orientation.offset[1]] =\
-                    (orientation.cell2, orientation.dir2)
 
                 return True
         else:
@@ -181,7 +213,7 @@ class DoubleCard:
             return False
 
         # Check if card stays within the bounds of the board
-        if  other_row >= self.num_rows or other_col >= self.num_cols:
+        if other_row >= self.num_rows or other_col >= self.num_cols:
             print('Exceeds limits of the board: {}:{}'.format(other_row, other_col))
             return False
 
@@ -202,9 +234,6 @@ class DoubleCard:
         # If none of the exit conditions were met, this move is valid
         return True
 
-        
-
-
     def victory_move(self, row, col, orientation, board):
         """
         Checks if the placement of the new card triggered a victory
@@ -214,7 +243,103 @@ class DoubleCard:
         :param board: The board on which to check if victory has been achieved
         :return: True if the play triggers a victory, false otherwise
         """
-        pass
+
+        color = Cell.color(board[row][col][0])
+        fill = Cell.fill(board[row][col][0])
+
+        color_streak = 1
+        fill_streak = 1
+
+        # Count to the left of the cell for color
+        for row_num in range(row - 1, row - 4, -1):
+            if row_num >= 0:
+                if color == Cell.color(board[row_num][col][0]):
+                    color_streak += 1
+                else:
+                    break
+            else:
+                break
+
+        # Count to the left of the cell for color
+        for row_num in range(row - 1, row - 4, -1):
+            if row_num >= 0:
+                if fill == Cell.fill(board[row_num][col][0]):
+                    fill_streak += 1
+                else:
+                    break
+            else:
+                break
+
+        if self.check_victory(color_streak, fill_streak):
+            return True
+
+        # Check Horizontal
+        color_streak = 1
+        fill_streak = 1
+
+        # Count to the left of the cell for color
+        for column in range(col - 1, col - 4, -1):
+            if column >= 0:
+                if color == Cell.color(board[row][column][0]):
+                    color_streak += 1
+                else:
+                    break
+            else:
+                break
+
+        # Count to the left of the cell for fill
+        for column in range(col - 1, col - 4, -1):
+            if column >= 0:
+                if fill == Cell.fill(board[row][column][0]):
+                    fill_streak += 1
+                else:
+                    break
+            else:
+                break
+
+        # Count to the right of the block for color
+        for column in range(col + 1, col + 4):
+            if column < self.num_cols:
+                if color == Cell.color(board[row][column][0]):
+                    color_streak += 1
+                else:
+                    break
+            else:
+                break
+
+        # Count to the right of the block for fill
+        for column in range(col + 1, col + 4):
+            if column < self.num_cols:
+                if fill == Cell.fill(board[row][column][0]):
+                    fill_streak += 1
+                else:
+                    break
+            else:
+                break
+
+        if self.check_victory(color_streak, fill_streak):
+            return True
+
+        # TODO: Check Diagonal
+
+        return False
+
+    def check_victory(self, color_streak, fill_streak):
+        # Check if victory condition was met
+        if color_streak >= 4 and fill_streak >= 4:
+            if self.active_player == Player.COLORS:
+                print('Colors have won!')
+                return True
+            else:
+                print('Dots have won!')
+                return True
+        elif color_streak >= 4:
+            print('Colors have won!')
+            return True
+        elif fill_streak >= 4:
+            print('Dots have won!')
+            return True
+        return False
 
     def visualize_board(self):
         """
@@ -225,5 +350,7 @@ class DoubleCard:
         print(self.board[::-1, :, 0])
         pass
 
+
 if __name__ == "__main__":
     DoubleCard().play()
+    
