@@ -1,5 +1,6 @@
 import numpy as np
 
+import BoardDisplay
 
 class Dir:
     UP, DOWN, LEFT, RIGHT = range(4)
@@ -86,6 +87,7 @@ class DoubleCard:
         self.game_over = False
         self.board = np.zeros((self.num_rows, self.num_cols), dtype='3int8')
         self.active_player = False
+        self.display = BoardDisplay.BoardDisplay(12, 8, 50)
 
 
     def play(self):
@@ -93,6 +95,7 @@ class DoubleCard:
         Loops through game states until the game is over
         :return: None
         """
+        self.display.start()
 
         # Initialize players
         self.active_player = int(input("Are you playing for colors(0) or dots(1)\n"))
@@ -208,6 +211,8 @@ class DoubleCard:
                 other_col = col + orientation.offset[1]
                 self.board[row][col] = (orientation.cell1, other_row, other_col)
                 self.board[other_row][other_col] = (orientation.cell2, row, col)
+
+                self.display.addPiece(row, col, orientation)
 
                 # Check if this move triggers a victory condition
                 if self.victory_move(row, col, self.board) or\
