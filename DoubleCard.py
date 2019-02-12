@@ -250,6 +250,8 @@ class DoubleCard:
         # set old coordinates to 0
         self.board[old_row1][old_col1] = 0
         self.board[old_row2][old_col2] = 0
+        self.display.removePiece(old_row1, old_col1)
+
         # play card at new coordinates
         return self.play_card(new_row, new_col, orientation)
 
