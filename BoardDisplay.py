@@ -14,7 +14,7 @@ class BoardDisplay(Thread):
         self.pixelPerGridSquare = pixelPerGridSquare
         self.width = self.pixelPerGridSquare * self.num_cols
         self.height = self.pixelPerGridSquare * self.num_rows
-        self.pieces = []
+        self.pieces = {}
         self.canvas = None
 
     def addPiece(self, row, col, orientation):
@@ -30,10 +30,14 @@ class BoardDisplay(Thread):
         cell1CircleFilled = (orientation.cell1 == Cell.RED_FILLED or orientation.cell1 == Cell.WHITE_FILLED)
         cell2CircleFilled = (orientation.cell2 == Cell.RED_FILLED or orientation.cell2 == Cell.WHITE_FILLED)
 
-        self.pieces.append((cell1X, cell1Y, cell1BackgroundColor, cell1CircleFilled, cell2X, cell2Y, cell2BackgroundColor, cell2CircleFilled))
+        self.pieces[(row, col)] = (cell1X, cell1Y, cell1BackgroundColor, cell1CircleFilled, cell2X, cell2Y, cell2BackgroundColor, cell2CircleFilled)
+    
+    def removePiece(self, row, col):
+        del self.pieces[(row, col)]
 
     def run(self):
         display = tk.Tk()
+        display.title("Deep Garbagio")
         self.canvas = tk.Canvas(display, width=self.width, height=self.height)
         self.canvas.pack()
         self.canvas.after(16, self.__redraw)
@@ -51,7 +55,7 @@ class BoardDisplay(Thread):
                 self.canvas.create_line(col * self.pixelPerGridSquare, 0, col * self.pixelPerGridSquare, self.height)
 
             # draw pieces
-            for piece in self.pieces:
+            for piece in self.pieces.values():
                 # draw squares
                 self.canvas.create_rectangle(piece[0], piece[1], piece[0] + self.pixelPerGridSquare, piece[1] + self.pixelPerGridSquare, fill=piece[2], width=2)
                 self.canvas.create_rectangle(piece[4], piece[5], piece[4] + self.pixelPerGridSquare, piece[5] + self.pixelPerGridSquare, fill=piece[6], width=2)
