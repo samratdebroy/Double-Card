@@ -1,9 +1,14 @@
 import tkinter as tk
 import math
+import sys
+import os
 
 from threading import Thread
 
 from DoubleCard import Orientation, Cell, Dir
+
+def closeProgram():
+    os._exit(0)
 
 class BoardDisplay(Thread):
 
@@ -38,6 +43,8 @@ class BoardDisplay(Thread):
     def run(self):
         display = tk.Tk()
         display.title("Deep Garbagio")
+        display.resizable(False, False)
+        display.protocol("WM_DELETE_WINDOW", closeProgram)
         self.canvas = tk.Canvas(display, width=self.width, height=self.height)
         self.canvas.pack()
         self.canvas.after(16, self.__redraw)
