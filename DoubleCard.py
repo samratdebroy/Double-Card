@@ -89,7 +89,6 @@ class DoubleCard:
         self.active_player = False
         self.display = BoardDisplay.BoardDisplay(12, 8, 50)
 
-
     def play(self):
         """
         Loops through game states until the game is over
@@ -212,7 +211,7 @@ class DoubleCard:
                 self.board[row][col] = (orientation.cell1, other_row, other_col)
                 self.board[other_row][other_col] = (orientation.cell2, row, col)
 
-                self.display.addPiece(row, col, orientation)
+                self.display.add_piece(row, col, orientation)
 
                 # Check if this move triggers a victory condition
                 if self.victory_move(row, col, self.board) or\
@@ -240,11 +239,11 @@ class DoubleCard:
             print('Old coordinates do not correspond to a single card')
             return False
 
-        # Ensure that cells above card is empty
+        # Ensure that cells above card being recycled are empty to allow the move
         if old_row1 < self.num_rows - 1:
             if self.board[old_row2 + 1][old_col2][0] != Cell.EMPTY or\
                     self.board[old_row1 + 1][old_col1][0] != Cell.EMPTY:
-                    print('Cards cannot float above empty location: {}:{} or {}:{}'.format(old_row1 , old_col1, old_row1 , old_col1 + 1))
+                    print('Can\'t allow move because cards cannot float above empty location: {}:{} or {}:{}'.format(old_row1 , old_col1, old_row1 , old_col1 + 1))
                     return False
 
         # set old coordinates to 0
