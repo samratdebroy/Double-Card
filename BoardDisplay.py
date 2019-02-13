@@ -22,6 +22,8 @@ class BoardDisplay(Thread):
         self.pieces = {}
         self.display = None
         self.canvas = None
+        self.vertical_label = None
+        self.horizontal_label = None
 
     def add_piece(self, row, col, orientation):
         cell1X = (col + 1) * self.pixelPerGridSquare
@@ -49,6 +51,10 @@ class BoardDisplay(Thread):
         self.canvas = tk.Canvas(self.display, width=self.width, height=self.height)
         self.canvas.pack()
         self.canvas.after(16, self.__redraw)
+        self.horizontal_label = tk.Label(self.display, text='A  B  C  D  E  F  G  H', fg="white",
+                                        bg="#2F2F2F", font="Courier 22")
+        self.vertical_label = tk.Label(self.display, text='12\n\n11\n\n10\n\n9\n\n8\n\n7\n\n6\n\n5\n\n4\n\n3\n\n2\n\n1', fg="white",
+                                        bg="black", font="Courier 17")
         tk.mainloop()
 
     def __redraw(self):
@@ -84,13 +90,8 @@ class BoardDisplay(Thread):
                                        fill="#2F2F2F", width=2)
 
             # drawing grid labeling
-            horizontal_label = tk.Label(self.display, text='A  B  C  D  E  F  G  H', fg="white",
-                                        bg="#2F2F2F", font="Courier 22")
-            vertical_label = tk.Label(self.display, text='12\n\n11\n\n10\n\n9\n\n8\n\n7\n\n6\n\n5\n\n4\n\n3\n\n2\n\n1', fg="white",
-                                        bg="black", font="Courier 17")
-
-            self.canvas.create_window((self.pixelPerGridSquare*self.num_cols) / 2, self.pixelPerGridSquare*(self.num_rows - 0.5), window=horizontal_label)
-            self.canvas.create_window(self.pixelPerGridSquare / 2, (self.pixelPerGridSquare*self.num_rows) / 2, window=vertical_label)
+            self.canvas.create_window((self.pixelPerGridSquare*self.num_cols) / 2, self.pixelPerGridSquare*(self.num_rows - 0.5), window=self.horizontal_label)
+            self.canvas.create_window(self.pixelPerGridSquare / 2, (self.pixelPerGridSquare*self.num_rows) / 2, window=self.vertical_label)
 
             # draw pieces
             for piece in self.pieces.values():

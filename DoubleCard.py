@@ -83,7 +83,7 @@ class DoubleCard:
         self.turn_number = 0
         self.last_moved_card = None
         self.recycling_mode = False
-        self.max_cards_in_game = 4
+        self.max_cards_in_game = 24
         self.game_over = False
         self.board = np.zeros((self.num_rows, self.num_cols), dtype='3int8')
         self.active_player = False
