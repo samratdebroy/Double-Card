@@ -94,7 +94,7 @@ class BoardDisplay(Thread):
             self.canvas.create_window(self.pixelPerGridSquare / 2, (self.pixelPerGridSquare*self.num_rows) / 2, window=self.vertical_label)
 
             # draw pieces
-            for piece in self.pieces.values():
+            for piece in self.pieces.copy().values():
                 # draw squares
                 self.canvas.create_rectangle(piece[0], piece[1], piece[0] + self.pixelPerGridSquare, piece[1] + self.pixelPerGridSquare, fill=piece[2], width=2)
                 self.canvas.create_rectangle(piece[4], piece[5], piece[4] + self.pixelPerGridSquare, piece[5] + self.pixelPerGridSquare, fill=piece[6], width=2)

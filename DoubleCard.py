@@ -1,6 +1,5 @@
 import numpy as np
-
-import BoardDisplay
+import time
 
 class Dir:
     UP, DOWN, LEFT, RIGHT = range(4)
@@ -68,6 +67,7 @@ class Orientation:
         self.dir2 = dir2
         self.offset = offset
 
+import BoardDisplay
 
 class Player:
     COLORS, DOTS = False, True
@@ -79,17 +79,20 @@ class DoubleCard:
 
         self.num_rows = 12
         self.num_cols = 8
-        self.columns = {'A':1, 'B':2, 'C':3, 'D':4, 'E':5, 'F':6, 'G':7, 'H':8}
+        self.columns = {'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8}  # Column label mapping
+        self.column_idx_to_letter = 'ABCDEFGH'
         self.turn_number = 0
         self.last_moved_card = None
         self.recycling_mode = False
-        self.max_cards_in_game = 24
+        self.max_cards_in_game = 24  # The total number of cards split among both players; Affects recycling mode timing
         self.game_over = False
         self.board = np.zeros((self.num_rows, self.num_cols), dtype='3int8')
         self.active_player = False
         self.display = BoardDisplay.BoardDisplay(12, 8, 50)
+        self.verbose_output = True  # Set to true if you want to see board state in the console after each move
+        self.animate = True  # Set to true if you want to see board build itself when running tests
 
-    def play(self):
+    def play(self, input_file=None):
         """
         Loops through game states until the game is over
         :return: None
@@ -97,98 +100,105 @@ class DoubleCard:
         self.display.start()
 
         # Initialize players
-        self.active_player = int(input("Are you playing for colors(0) or dots(1)\n"))
+        if input_file:
+            self.active_player = 0
+        else:
+            self.active_player = int(input("Are you playing for colors(0) or dots(1)\n"))
 
         # game loop
         while not self.game_over:
-            self.next_turn()
+            try:
+                if input_file:
+                    move = input_file.readline().split()
+                    # Sleep to give the illusion that the game is animated
+                    if self.animate:
+                        time.sleep(0.1)
+                    # If end of file reached give control back to user
+                    if move == []:
+                        input_file = None
+                        continue
+                else:
+                    move = input("Enter your move (0 orientation column row)\n").split()
+            except:
+                print('Error diagonal_open_win.txt invalid')
+
+            self.next_turn(move)
         pass
 
-    def next_turn(self):
+    def next_turn(self, move):
         """
         Moves the game state to the next turn. Handles switching active players, getting inputs and checking for victory
         :return: None
         """
 
-        # get move from player
-        valid_input = False
-        while not valid_input:
-            try:
+        # Ensure that the move was valid
+        index_offset = 0
+        if not self.recycling_mode:
+            if len(move) != 4:
+                print('incorrect number of parameters, should be 4')
+                return
+        else:
+            index_offset = 3
+            if len(move) != 7:
+                print('incorrect number of parameters, should be 7')
+                return
 
-                move = input("Enter your move (0 orientation column row)\n").split()
-                index_offset = 0
-                if not self.recycling_mode:
-                    if len(move) != 4:
-                        print('incorrect number of parameters, should be 4')
-                        continue
-                else:
-                    index_offset = 3
-                    if len(move) != 7:
-                        print('incorrect number of parameters, should be 7')
-                        continue
+            # get old coordinate, first cell
+            if move[0] not in self.columns:
+                print('column value must be between A and H, {} is invalid'.format(move[0]))
+                return
+            old_col1 = self.columns[move[0]] - 1
 
-                    # get old coordinate, first cell
-                    if move[0] not in self.columns:
-                        print('column value must be between A and H, {} is invalid'.format(move[0]))
-                        continue
-                    old_col1 = self.columns[move[0]] - 1
+            row_val = int(move[1]) - 1
+            if row_val > 11 or row_val < 0:
+                print('Row value must be between 12 and 1, {} is invalid'.format(row_val + 1))
+                return
+            old_row1 = row_val
 
-                    row_val = int(move[1]) - 1
-                    if row_val > 11 or row_val < 0:
-                        print('Row value must be between 12 and 1, {} is invalid'.format(row_val))
-                        continue
-                    old_row1 = row_val
+            # get old coordinate, second cell
+            if move[2] not in self.columns:
+                print('column value must be between A and H, {} is invalid'.format(move[2]))
+                return
+            old_col2 = self.columns[move[2]] - 1
 
-                    # get old coordinate, second cell
-                    if move[2] not in self.columns:
-                        print('column value must be between A and H, {} is invalid'.format(move[2]))
-                        continue
-                    old_col2 = self.columns[move[2]] - 1
+            row_val = int(move[3]) - 1
+            if row_val > 11 or row_val < 0:
+                print('Row value must be between 12 and 1, {} is invalid'.format(row_val + 1))
+                return
+            old_row2 = row_val
 
-                    row_val = int(move[3]) - 1
-                    if row_val > 11 or row_val < 0:
-                        print('Row value must be between 12 and 1, {} is invalid'.format(row_val))
-                        continue
-                    old_row2 = row_val
+        orientation_val = int(move[1 + index_offset])
+        if orientation_val < 1 or orientation_val > 8:
+            print('Orientation value must be between 1 and 8, {} is invalid'.format(orientation_val))
+            return
+        orientation = Orientation(orientation_val)
 
+        if move[2 + index_offset] not in self.columns:
+            print('column value must be between A and H, {} is invalid'.format(move[2 + index_offset]))
+            return
+        col = self.columns[move[2 + index_offset]] - 1
 
-                orientation_val = int(move[1 + index_offset])
-                if orientation_val < 1 or orientation_val > 8:
-                    print('Orientation value must be between 1 and 8, {} is invalid'.format(orientation_val))
-                    continue
-                orientation = Orientation(orientation_val)
-
-                if move[2 + index_offset] not in self.columns:
-                    print('column value must be between A and H, {} is invalid'.format(move[2 + index_offset]))
-                    continue
-                col = self.columns[move[2 + index_offset]] - 1
-
-                row_val = int(move[3 + index_offset]) - 1
-                if row_val > 11 or row_val < 0:
-                    print('Row value must be between 12 and 1, {} is invalid'.format(row_val))
-                    continue
-                row = row_val
-
-                valid_input = True
-
-            except:
-                print('Error input invalid')
+        row_val = int(move[3 + index_offset]) - 1
+        if row_val > 11 or row_val < 0:
+            print('Row value must be between 12 and 1, {} is invalid'.format(row_val + 1))
+            return
+        row = row_val
 
         if not self.recycling_mode:
             # play card
             if self.play_card(row, col, orientation):
-                print('Played a card at coordinate {}:{}'.format(move[2], row))
+                print('Played a card at coordinate {}:{}'.format(move[2], row + 1))
                 self.turn_number += 1
                 # If players have each used up all 12 of their cards, start recycling cards on board
                 if self.turn_number >= self.max_cards_in_game:
                     self.recycling_mode = True
             else:
                 print('ILLEGAL MOVE')
-                self.next_turn()
+                return
         else:
             if self.recycle_card(old_row1, old_col1, old_row2, old_col2, row, col, orientation):
                 pass
-            
+
         # Print Board
         self.visualize_board()
 
@@ -233,18 +243,19 @@ class DoubleCard:
         """
 
         # validate card removal
-
         # Ensure the old coordinates correspond to a single card
         if self.board[old_row1][old_col1][1] != old_row2 or self.board[old_row1][old_col1][2] != old_col2:
             print('Old coordinates do not correspond to a single card')
             return False
 
         # Ensure that cells above card being recycled are empty to allow the move
-        if old_row1 < self.num_rows - 1:
-            if self.board[old_row2 + 1][old_col2][0] != Cell.EMPTY or\
-                    self.board[old_row1 + 1][old_col1][0] != Cell.EMPTY:
-                    print('Can\'t allow move because cards cannot float above empty location: {}:{} or {}:{}'.format(old_row1 , old_col1, old_row1 , old_col1 + 1))
-                    return False
+        if (self.board[old_row2 + 1][old_col2][0] != Cell.EMPTY and old_row2 != old_row1 - 1) or\
+                (self.board[old_row1 + 1][old_col1][0] != Cell.EMPTY and old_row1 != old_row2 - 1):
+                print('The cells above the old coordinates are occupied. {}:{} and {}:{} cannot be moved since'
+                      'otherwise the cards above will float over empty cells'
+                      .format(old_row1 + 1, self.column_idx_to_letter[old_col1],
+                              old_row1 + 1, self.column_idx_to_letter[old_col1 + 1]))
+                return False
 
         # set old coordinates to 0
         self.board[old_row1][old_col1] = 0
@@ -269,31 +280,34 @@ class DoubleCard:
 
         # at shuffle phase, check if current card is the same as last card played
         if self.last_moved_card == (row, col):
-            print('Last card was moved from: {}:{}'.format(row, col))
+            print('Last card was moved from: {}:{}'.format(row + 1, self.column_idx_to_letter[col]))
             return False
 
         # Check if card stays within the bounds of the board
         if other_row >= self.num_rows or other_col >= self.num_cols:
-            print('Exceeds limits of the board: {}:{}'.format(other_row, other_col))
+            print('Exceeds limits of the board: {}:{}'.format(other_row + 1, self.column_idx_to_letter[other_col]))
             return False
 
         # Ensure the cells in which the card will be placed are empty
         if board[row][col][0] != Cell.EMPTY or board[other_row][other_col][0] != Cell.EMPTY:
-            print('There are already cards at cells: {}:{} or {}:{}'.format(row, col, other_row, other_col))
+            print('There are already cards at cells: {}:{} or {}:{}'
+                  .format(row + 1, self.column_idx_to_letter[col], other_row + 1, self.column_idx_to_letter[other_col]))
             return False
 
         # Ensure that cells underneath card is not empty
         if row > 0:
             if orientation.dir1 == Dir.RIGHT:
-                not_empty_below = board[row-1][col][0] != Cell.EMPTY and board[row-1][col+1][0] != Cell.EMPTY
-                if not not_empty_below:
-                    print('Cards cannot float above empty location: {}:{} or {}:{}'.format(row-1, col, row-1, col+1))
-                return not_empty_below
+                empty_below = board[row-1][col][0] == Cell.EMPTY or board[row-1][col+1][0] == Cell.EMPTY
+                if empty_below:
+                    print('Cards cannot float above empty location: {}:{} or {}:{} is empty'
+                          .format(row, self.column_idx_to_letter[col], row, self.column_idx_to_letter[col+1]))
+                return not empty_below
             else:
-                not_empty_below = board[row-1][col][0] != Cell.EMPTY
-                if not not_empty_below:
-                    print('Cards cannot float above empty location: {}:{}'.format(row-1, col))
-                return not_empty_below
+                empty_below = board[row-1][col][0] == Cell.EMPTY
+                if empty_below:
+                    print('Cards cannot float above empty location: {}:{} is empty'
+                          .format(row, self.column_idx_to_letter[col]))
+                return not empty_below
 
         # If none of the exit conditions were met, this move is valid
         return True
@@ -389,10 +403,9 @@ class DoubleCard:
         :param board: The board to be visualized
         :return: None
         """
-        print(self.board[::-1, :, 0])
-        pass
+        if self.verbose_output:
+            print(self.board[::-1, :, 0])
 
 
 if __name__ == "__main__":
     DoubleCard().play()
-    
