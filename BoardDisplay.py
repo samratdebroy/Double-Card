@@ -82,7 +82,7 @@ class BoardDisplay(Thread):
                                        self.pixelPerGridSquare * (self.num_cols - 1), self.pixelPerGridSquare - 1,
                                        self.pixelPerGridSquare - 1, self.pixelPerGridSquare,
                                        fill="#2F2F2F", width=2)
-            #bottom border
+            # bottom border
             self.canvas.create_polygon(0, self.pixelPerGridSquare * self.num_rows,
                                        self.pixelPerGridSquare - 1, self.pixelPerGridSquare*(self.num_rows - 1),
                                        self.pixelPerGridSquare*(self.num_cols - 1), self.pixelPerGridSquare*(self.num_rows - 1),
@@ -96,8 +96,8 @@ class BoardDisplay(Thread):
             # draw pieces
             for piece in self.pieces.copy().values():
                 # draw squares
-                self.canvas.create_rectangle(piece[0], piece[1], piece[0] + self.pixelPerGridSquare, piece[1] + self.pixelPerGridSquare, fill=piece[2], width=2)
-                self.canvas.create_rectangle(piece[4], piece[5], piece[4] + self.pixelPerGridSquare, piece[5] + self.pixelPerGridSquare, fill=piece[6], width=2)
+                self.canvas.create_rectangle(piece[0], piece[1], piece[0] + self.pixelPerGridSquare, piece[1] + self.pixelPerGridSquare, fill=piece[2], width=0)
+                self.canvas.create_rectangle(piece[4], piece[5], piece[4] + self.pixelPerGridSquare, piece[5] + self.pixelPerGridSquare, fill=piece[6], width=0)
 
                 # draw circles
                 radius = math.floor(self.pixelPerGridSquare * 0.1)
@@ -109,5 +109,12 @@ class BoardDisplay(Thread):
                 cell2CenterY = math.floor(piece[5] + (self.pixelPerGridSquare / 2.0))
                 self.canvas.create_oval(cell2CenterX - radius, cell2CenterY - radius, cell2CenterX + radius, cell2CenterY + radius, fill="black" if piece[7] else "")
 
+            # Draw card borders
+            for piece in self.pieces.copy().values():
+                border_x = min(piece[0], piece[4])
+                border_y = min(piece[1], piece[5])
+                border_x_max = max(piece[0] + self.pixelPerGridSquare, piece[4] + self.pixelPerGridSquare)
+                border_y_max = max(piece[1] + self.pixelPerGridSquare, piece[5] + self.pixelPerGridSquare)
+                self.canvas.create_rectangle(border_x, border_y, border_x_max, border_y_max, fill='', width=5)
 
             self.canvas.after(16, self.__redraw)
