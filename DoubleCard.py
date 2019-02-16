@@ -32,7 +32,7 @@ class Cell:
 class Orientation:
 
     def __init__(self, orientation):
-        
+
         if orientation % 2 == 0:
             # Vertical card
             dir1 = Dir.UP
@@ -55,12 +55,12 @@ class Orientation:
         else:
             cell1 = Cell.RED_EMPTY
             cell2 = Cell.WHITE_FILLED
-            
+
         if dir1 == Dir.UP:
             offset = (1, 0)
         else:
             offset = (0, 1)
-            
+
         self.cell1 = cell1
         self.dir1 = dir1
         self.cell2 = cell2
@@ -205,12 +205,13 @@ class DoubleCard:
         # set next player's turn
         self.active_player = not self.active_player
 
-    def play_card(self, row, col, orientation):
+    def play_card(self, row, col, orientation, old_coord=None):
         """
         Plays a card at a given location on the board
         :param row: row where card will be played
         :param col: column where card will be played
         :param orientation: the orientation of the card while being placed
+        :param old_coord: the old coordinates of the card to remove from the board
         :return: True if a valid card was played, false otherwise
         """
 
@@ -220,7 +221,8 @@ class DoubleCard:
                 other_col = col + orientation.offset[1]
                 self.board[row][col] = (orientation.cell1, other_row, other_col)
                 self.board[other_row][other_col] = (orientation.cell2, row, col)
-
+                if old_coord:
+                    self.display.removePiece(*old_coord)
                 self.display.add_piece(row, col, orientation)
 
                 # Check if this move triggers a victory condition
@@ -242,6 +244,14 @@ class DoubleCard:
         :return: True if a valid card was played, false otherwise
         """
 
+        # Ensure that the bottom-left cell is regarded as the first cell of the card
+        if old_row2 < old_row1 or old_col2 < old_col1:
+            temp = (old_row1, old_col1)
+            old_row1 = old_row2
+            old_col1 = old_col2
+            old_row2 = temp[0]
+            old_col2 = temp[1]
+
         # validate card removal
         # Ensure the old coordinates correspond to a single card
         if self.board[old_row1][old_col1][1] != old_row2 or self.board[old_row1][old_col1][2] != old_col2:
@@ -252,18 +262,49 @@ class DoubleCard:
         if (self.board[old_row2 + 1][old_col2][0] != Cell.EMPTY and old_row2 != old_row1 - 1) or\
                 (self.board[old_row1 + 1][old_col1][0] != Cell.EMPTY and old_row1 != old_row2 - 1):
                 print('The cells above the old coordinates are occupied. {}:{} and {}:{} cannot be moved since'
-                      'otherwise the cards above will float over empty cells'
+                      ' otherwise the cards above will float over empty cells'
                       .format(old_row1 + 1, self.column_idx_to_letter[old_col1],
                               old_row1 + 1, self.column_idx_to_letter[old_col1 + 1]))
                 return False
 
-        # set old coordinates to 0
-        self.board[old_row1][old_col1] = 0
-        self.board[old_row2][old_col2] = 0
-        self.display.removePiece(old_row1, old_col1)
+        # Ensure that the card is in either a new coord or orientation
+        # check coord. of first half
+        if (old_row1, old_col1) == (new_row,  new_col):
+            # check if in same pos
+            if self.board[old_row1][old_col1][0] == orientation.cell1 and\
+                    self.board[old_row2][old_col2][0] == orientation.cell2:
+                print('Cannot recycle card, either coordinate or orientation of card must change')
+                return False
+        if (old_row2, old_col2) == (new_row,  new_col):
+            # check if in same pos
+            if self.board[old_row2][old_col2][0] == orientation.cell1 and\
+                    self.board[old_row1][old_col1][0] == orientation.cell2:
+                print('Cannot recycle card, either coordinate or orientation of card must change')
+                return False
 
+        # check if current card is the same as last card played
+        if self.last_moved_card == (old_row1, old_col1) or self.last_moved_card == (old_row2, old_col2):
+            print('Last card was moved from: {}:{}, you cannot move this card again this turn'
+                  .format(old_row1, self.column_idx_to_letter[old_col1]))
+            return False
+
+        # store old card values
+        old_card_val = [self.board[old_row1][old_col1].copy(), self.board[old_row2][old_col2].copy()]
+
+        # set value of old card's location to Empty
+        self.board[old_row1][old_col1] = Cell.EMPTY
+        self.board[old_row2][old_col2] = Cell.EMPTY
         # play card at new coordinates
-        return self.play_card(new_row, new_col, orientation)
+        if self.play_card(new_row, new_col, orientation, old_coord=(old_row1, old_col1)):
+            # set old coordinates to 0
+            self.last_moved_card = (new_row, new_col)
+            return True
+        else:
+            # error was found recycling card
+            # reset old card values
+            self.board[old_row1][old_col1] = old_card_val[0]
+            self.board[old_row2][old_col2] = old_card_val[1]
+            return False
 
     def valid_move(self, row, col, orientation, board):
         """
@@ -277,11 +318,6 @@ class DoubleCard:
 
         other_row = orientation.offset[0] + row
         other_col = orientation.offset[1] + col
-
-        # at shuffle phase, check if current card is the same as last card played
-        if self.last_moved_card == (row, col):
-            print('Last card was moved from: {}:{}'.format(row + 1, self.column_idx_to_letter[col]))
-            return False
 
         # Check if card stays within the bounds of the board
         if other_row >= self.num_rows or other_col >= self.num_cols:
