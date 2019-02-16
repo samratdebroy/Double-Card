@@ -23,8 +23,8 @@ python DoubleCard.py
 After running ''' python DoubleCard.py ''' in the Anaconda Prompt
 Choose whether the first player plays as colors or dots
 Enter '0' for Colors or '1' for Dots
-input commands as defined in the project specification
-Ex:
+input commands as defined in the project specification<br/>
+Ex:<br/>
 Regular move
 ```
 0 2 H 1
@@ -38,7 +38,7 @@ H 1 H 2 2 G 1
 ##### Batch Input
 to test multiple moves in one input run ''' python DoubleCard.py '''
 then copy and paste the moves into the command prompt.
-Note each move should be separated by a new line
+Note each move should be separated by a new line<br/>
 Ex:
 ```
 0 3 A 1
@@ -50,5 +50,11 @@ Ex:
 You can use: ``` python TestDoubleCard.py``` instead if you want to start with a board ready for recycling.
 Then continue playing the game as usual using recycling moves.
 
-
+### Contributors
+| Name              | ID          |
+| ----------------- | ------------|
+| Samrat Debroy     | 40002159    |
+| Gabriel Belanger  | 40002109    |
+| Simon Bourque     | 40000680    |
+| Nathan Shummoogum | 40004336    |
 
