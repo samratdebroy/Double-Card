@@ -1,7 +1,7 @@
 # Double-Card
 Double Card is a 2-player game played with 24 identical cards and an 8x12 board. This repo implements the game in Python for manual play as well as AI controlled play through the Minimax algorithm.
 
-![](name-of-giphy.gif)
+![](game-example.gif)
 
 ## Dependencies
 # <img alt="NumPy" src="https://cdn.rawgit.com/numpy/numpy/master/branding/icons/numpylogo.svg" height="60">
@@ -31,7 +31,7 @@ Regular move
 ```
 Recycle move
 ```
-* H 1 H 2 2 G 1
+H 1 H 2 2 G 1
 ```
 ### Running test cases
 
