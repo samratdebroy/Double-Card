@@ -5,7 +5,7 @@ import os
 
 from threading import Thread
 
-from DoubleCard import Orientation, Cell, Dir
+from DoubleCard import Card, Cell, Dir
 
 def closeProgram():
     os._exit(0)
@@ -25,18 +25,22 @@ class BoardDisplay(Thread):
         self.vertical_label = None
         self.horizontal_label = None
 
-    def add_piece(self, row, col, orientation):
+    def add_piece(self, cell):
+        card = cell.card
+        row, col = card.coords1
+        row2, col2 = card.coords2
+
         cell1X = (col + 1) * self.pixelPerGridSquare
-        cell2X = ((col + 1) + orientation.offset[1]) * self.pixelPerGridSquare
+        cell2X = (col2 + 1) * self.pixelPerGridSquare
 
         cell1Y = (self.pixelPerGridSquare * (self.num_rows - 1)) - ((row + 1) * self.pixelPerGridSquare)
-        cell2Y = (self.pixelPerGridSquare * (self.num_rows - 1)) - (((row + 1) + orientation.offset[0]) * self.pixelPerGridSquare)
+        cell2Y = (self.pixelPerGridSquare * (self.num_rows - 1)) - ((row2 + 1) * self.pixelPerGridSquare)
 
-        cell1BackgroundColor = "red" if (orientation.cell1 == Cell.RED_EMPTY or orientation.cell1 == Cell.RED_FILLED) else "white"
-        cell2BackgroundColor = "red" if (orientation.cell2 == Cell.RED_EMPTY or orientation.cell2 == Cell.RED_FILLED) else "white"
+        cell1BackgroundColor = "red" if (cell.color == Cell.RED) else "white"
+        cell2BackgroundColor = "red" if (cell.other.color == Cell.RED) else "white"
 
-        cell1CircleFilled = (orientation.cell1 == Cell.RED_FILLED or orientation.cell1 == Cell.WHITE_FILLED)
-        cell2CircleFilled = (orientation.cell2 == Cell.RED_FILLED or orientation.cell2 == Cell.WHITE_FILLED)
+        cell1CircleFilled = cell.fill == Cell.FILLED
+        cell2CircleFilled = cell.other.fill == Cell.FILLED
 
         self.pieces[(row, col)] = (cell1X, cell1Y, cell1BackgroundColor, cell1CircleFilled, cell2X, cell2Y, cell2BackgroundColor, cell2CircleFilled)
     
