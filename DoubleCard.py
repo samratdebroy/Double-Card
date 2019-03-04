@@ -60,91 +60,137 @@ class DoubleCard:
             self.next_turn(move)
         pass
 
+    def validate_input(self, move):
+        """
+        Makes sure the input is valid
+        :return: False if error in input, True otherwise
+        """
+        if not self.state.recycling_mode:
+            #check arg length
+            if len(move) != 4:
+                print('ERROR: incorrect number of arguments, expected 4 instead of {}'.format(len(move)))
+                return False
+
+            # check first arg is 0
+            if move[0] != '0':
+                print('ERROR: incorrect first argument, expected 0 instead of {}'.format(move[0]))
+                return False
+
+            # check for valid orientation
+            if not self.is_valid_orientation(move[1]) :
+                return False
+
+            # check for valid column
+            if not self.is_valid_col(move[2]) :
+                return False
+
+            # check for valid row
+            if not self.is_valid_row(move[3]) :
+                return False
+
+        else:
+            # In recycle mode
+            if len(move) != 7:
+                print('ERROR: incorrect number of arguments, expected 7 instead of {}'.format(len(move)))
+                return False
+
+            if not self.is_valid_col(move[0]):
+                return False
+
+            if not self.is_valid_row(move[1]):
+                return False
+
+            if not self.is_valid_col(move[2]):
+                return False
+
+            if not self.is_valid_row(move[3]):
+                return False
+
+            if not self.is_valid_orientation(move[4]):
+                return False
+
+            if not self.is_valid_col(move[5]):
+                return False
+
+            if not self.is_valid_row(move[6]):
+                return False
+        return True
+
+    def is_valid_row(self, row):
+        """
+        Checks for valid row
+        :return: False if invalid, True otherwise
+        """
+        if not row.isdigit() or int(row) > GameConstants.NUM_ROWS or int(row) < 1:
+            print('ERROR: incorrect orientation, expected number between 1 and 12 instead of {}'.format(row))
+            return False
+        return True
+
+    def is_valid_col(self, col):
+        """
+        Checks for valid column
+        :return: False if invalid, True otherwise
+        """
+        if col not in self.columns:
+            print('ERROR: column value must be between A and H, {} is invalid'.format(col))
+            return False
+        return True
+
+    def is_valid_orientation(self, orientation):
+        """
+        Checks for valid orientation
+        :return: False if invalid, True otherwise
+        """
+
+        if not orientation.isdigit() or int(orientation) > 8:
+            print('ERROR: incorrect orientation, expected number between 1 and 8 instead of {}'.format(orientation))
+            return False
+        return True
+
+
     def next_turn(self, move):
         """
         Moves the game state to the next turn. Handles switching active players, getting inputs and checking for victory
         :return: None
         """
 
-        # Ensure that the move was valid
-        index_offset = 0
-        if not self.state.recycling_mode:
-            if len(move) != 4:
-                print('incorrect number of parameters, should be 4')
-                return
-        else:
-            index_offset = 3
-            if len(move) != 7:
-                print('incorrect number of parameters, should be 7')
-                return
+        if self.validate_input(move):
 
-            # get old coordinate, first cell
-            if move[0] not in self.columns:
-                print('column value must be between A and H, {} is invalid'.format(move[0]))
-                return
-            old_col1 = self.columns[move[0]] - 1
+            if not self.state.recycling_mode:
+                # play card
+                orientation = int(move[1])
+                col = self.columns[move[2]] - 1
+                row = int(move[3]) - 1
+                coord = (row, col)
+                card = Card(id=self.state.turn_number, orientation=orientation, coords=coord)
 
-            row_val = int(move[1]) - 1
-            if row_val > 11 or row_val < 0:
-                print('Row value must be between 12 and 1, {} is invalid'.format(row_val + 1))
-                return
-            old_row1 = row_val
-
-            # get old coordinate, second cell
-            if move[2] not in self.columns:
-                print('column value must be between A and H, {} is invalid'.format(move[2]))
-                return
-            old_col2 = self.columns[move[2]] - 1
-
-            row_val = int(move[3]) - 1
-            if row_val > 11 or row_val < 0:
-                print('Row value must be between 12 and 1, {} is invalid'.format(row_val + 1))
-                return
-            old_row2 = row_val
-
-        orientation_val = int(move[1 + index_offset])
-        if orientation_val < 1 or orientation_val > 8:
-            print('Orientation value must be between 1 and 8, {} is invalid'.format(orientation_val))
-            return
-
-
-        if move[2 + index_offset] not in self.columns:
-            print('column value must be between A and H, {} is invalid'.format(move[2 + index_offset]))
-            return
-        col = self.columns[move[2 + index_offset]] - 1
-
-        row_val = int(move[3 + index_offset]) - 1
-        if row_val > 11 or row_val < 0:
-            print('Row value must be between 12 and 1, {} is invalid'.format(row_val + 1))
-            return
-        row = row_val
-
-        if not self.state.recycling_mode:
-            # play card
-            coord = (row, col)
-            card = Card(id=self.state.turn_number, orientation=orientation_val, coords=coord)
-
-            if self.play_card(card):
-                print('Played a card at coordinate {}:{}'.format(move[2], row + 1))
-                self.state.turn_number += 1
-                # If players have each used up all 12 of their cards, start recycling cards on board
-                if self.state.turn_number >= GameConstants.MAX_CARDS_IN_GAME:
-                    self.state.recycling_mode = True
+                if self.play_card(card):
+                    print('Played a card at coordinate {}:{}'.format(move[2], row + 1))
+                    self.state.turn_number += 1
+                    # If players have each used up all 12 of their cards, start recycling cards on board
+                    if self.state.turn_number >= GameConstants.MAX_CARDS_IN_GAME:
+                        self.state.recycling_mode = True
+                else:
+                    print('ILLEGAL MOVE')
+                    return
             else:
-                print('ILLEGAL MOVE')
-                return
-        else:
+                old_col1 = self.columns[move[0]] - 1
+                old_row1 = int(move[1]) - 1
+                old_col2 = self.columns[move[2]] - 1
+                old_row2 = int(move[3]) - 1
+                orientation = int(move[4])
+                col = self.columns[move[5]] - 1
+                row = int(move[6]) - 1
+                new_coord = (row, col)
+                new_card = Card(id=None, orientation=orientation, coords=new_coord)
+                if self.recycle_card((old_row1, old_col1), (old_row2, old_col2), new_card, self.state.board):
+                    pass
 
-            new_coord = (row, col)
-            new_card = Card(id=None, orientation=orientation_val, coords=new_coord)
-            if self.recycle_card((old_row1, old_col1), (old_row2, old_col2), new_card, self.state.board):
-                pass
+            # Print Board
+            self.visualize_board()
 
-        # Print Board
-        self.visualize_board()
-
-        # set next player's turn
-        self.state.active_player = not self.state.active_player
+            # set next player's turn
+            self.state.active_player = not self.state.active_player
 
     def play_card(self, card, old_coord=None):
         """
@@ -168,7 +214,8 @@ class DoubleCard:
                         self.victory_move(card.coords2, self.state.board):
                     print("Victory condition was met!")
                     self.state.game_over = True
-
+                # after playing card set last moved card id
+                self.state.last_moved_card_id = card.id
                 return True
         else:
             return False
@@ -231,8 +278,6 @@ class DoubleCard:
         board[coord2].clear()
         # play card at new coordinates
         if self.play_card(new_card):
-            # set last moved card
-            self.state.last_moved_card_id = new_card.id
             return True
         else:
             # error was found recycling card
