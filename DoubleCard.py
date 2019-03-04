@@ -1,60 +1,12 @@
 import numpy as np
 import time
+from GameConstants import GameConstants
+from Cell import Cell
+from Card import Card
+from Dir import Dir
+from BoardState import BoardState
+from BoardDisplay import BoardDisplay
 
-class Dir:
-    UP = np.array((1,0))
-    DOWN = np.array((-1,0))
-    LEFT = np.array((0,-1))
-    RIGHT = np.array((0,1))
-
-
-class Cell:
-    EMPTY, RED, WHITE, FILLED, OPEN = range(5)
-
-    def __init__(self, coord):
-        self.coordinate = coord # Coordinate of the cell in the board
-        self.color = None
-        self.fill = None
-        self.card = None  # Card object referenced in this cell
-        self.other = None # Cell containing the other half of the card
-
-    def clear(self):
-        self.color = None
-        self.fill = None
-        self.card = None  # Card object referenced in this cell
-        self.other = None # Cell containing the other half of the card
-
-    @staticmethod
-    def get_color(cell):
-        return cell.color
-
-    @staticmethod
-    def get_fill(cell):
-        return cell.fill
-
-
-class Card:
-
-    def __init__(self, id,  orientation, coords):
-
-        self.id = id
-        self.orientation = orientation
-        self.horizontal = False
-        self.coords1 = coords
-        self.coords2 = np.zeros(2)
-
-        if orientation % 2 == 0:
-            # Vertical card
-            self.horizontal = False
-            coord = self.coords1 + Dir.UP
-            self.coords2 = tuple(coord.tolist()) # Convert Numpy array to tuple
-        else:
-            # Horizontal card
-            self.horizontal = True
-            coord = self.coords1 + Dir.RIGHT
-            self.coords2 = tuple(coord.tolist())
-
-import BoardDisplay
 
 class Player:
     COLORS, DOTS = False, True
@@ -63,26 +15,17 @@ class Player:
 class DoubleCard:
 
     def __init__(self):
-
-        self.num_rows = 12
-        self.num_cols = 8
         self.columns = {'A': 1, 'B': 2, 'C': 3, 'D': 4, 'E': 5, 'F': 6, 'G': 7, 'H': 8}  # Column label mapping
         self.column_idx_to_letter = 'ABCDEFGH'
-        self.turn_number = 0
-        self.last_moved_card_id = None
-        self.recycling_mode = False
-        self.max_cards_in_game = 24  # The total number of cards split among both players; Affects recycling mode timing
-        self.game_over = False
-        self.board = np.empty((self.num_rows, self.num_cols), dtype=object)
-        self.active_player = False
-        self.display = BoardDisplay.BoardDisplay(self.num_rows, self.num_cols, 50)
+        self.state = BoardState()
+        self.display = BoardDisplay(GameConstants.NUM_ROWS, GameConstants.NUM_COLS, 50)
         self.verbose_output = True  # Set to true if you want to see board state in the console after each move
         self.animate = True  # Set to true if you want to see board build itself when running tests
 
         # Initialize the board with empty cells
-        for row in range(self.num_rows):
-            for col in range(self.num_cols):
-                self.board[row, col] = Cell((row, col))
+        for row in range(GameConstants.NUM_ROWS):
+            for col in range(GameConstants.NUM_COLS):
+                self.state.board[row, col] = Cell((row, col))
 
     def play(self, input_file=None):
         """
@@ -93,12 +36,12 @@ class DoubleCard:
 
         # Initialize players
         if input_file:
-            self.active_player = 0
+            self.state.active_player = 0
         else:
-            self.active_player = int(input("Are you playing for colors(0) or dots(1)\n"))
+            self.state.active_player = int(input("Are you playing for colors(0) or dots(1)\n"))
 
         # game loop
-        while not self.game_over:
+        while not self.state.game_over:
             try:
                 if input_file:
                     move = input_file.readline().split()
@@ -125,7 +68,7 @@ class DoubleCard:
 
         # Ensure that the move was valid
         index_offset = 0
-        if not self.recycling_mode:
+        if not self.state.recycling_mode:
             if len(move) != 4:
                 print('incorrect number of parameters, should be 4')
                 return
@@ -176,17 +119,17 @@ class DoubleCard:
             return
         row = row_val
 
-        if not self.recycling_mode:
+        if not self.state.recycling_mode:
             # play card
             coord = (row, col)
-            card = Card(id=self.turn_number, orientation=orientation_val, coords=coord)
+            card = Card(id=self.state.turn_number, orientation=orientation_val, coords=coord)
 
             if self.play_card(card):
                 print('Played a card at coordinate {}:{}'.format(move[2], row + 1))
-                self.turn_number += 1
+                self.state.turn_number += 1
                 # If players have each used up all 12 of their cards, start recycling cards on board
-                if self.turn_number >= self.max_cards_in_game:
-                    self.recycling_mode = True
+                if self.state.turn_number >= GameConstants.MAX_CARDS_IN_GAME:
+                    self.state.recycling_mode = True
             else:
                 print('ILLEGAL MOVE')
                 return
@@ -194,14 +137,14 @@ class DoubleCard:
 
             new_coord = (row, col)
             new_card = Card(id=None, orientation=orientation_val, coords=new_coord)
-            if self.recycle_card((old_row1, old_col1), (old_row2, old_col2), new_card, self.board):
+            if self.recycle_card((old_row1, old_col1), (old_row2, old_col2), new_card, self.state.board):
                 pass
 
         # Print Board
         self.visualize_board()
 
         # set next player's turn
-        self.active_player = not self.active_player
+        self.state.active_player = not self.state.active_player
 
     def play_card(self, card, old_coord=None):
         """
@@ -211,20 +154,20 @@ class DoubleCard:
         :return: True if a valid card was played, false otherwise
         """
 
-        if self.valid_move(card, self.board):
+        if self.valid_move(card, self.state.board):
                 # Place card in the board
                 # set board cell values
-                DoubleCard.fill_cells(card, self.board)
+                DoubleCard.fill_cells(card, self.state.board)
 
                 if old_coord:
-                    self.display.removePiece(*old_coord)
-                self.display.add_piece(self.board[card.coords1])
+                    self.display.remove_piece(*old_coord)
+                self.display.add_piece(self.state.board[card.coords1])
 
                 # Check if this move triggers a victory condition
-                if self.victory_move(card.coords1, self.board) or\
-                        self.victory_move(card.coords2, self.board):
+                if self.victory_move(card.coords1, self.state.board) or\
+                        self.victory_move(card.coords2, self.state.board):
                     print("Victory condition was met!")
-                    self.game_over = True
+                    self.state.game_over = True
 
                 return True
         else:
@@ -278,7 +221,7 @@ class DoubleCard:
             return False
 
         # check if current card is the same as last card played
-        if self.last_moved_card_id == old_card.id:
+        if self.state.last_moved_card_id == old_card.id:
             print('Last card was moved from: {}:{}, you cannot move this card again this turn'
                   .format(coord1[0], self.column_idx_to_letter[coord1[1]]))
             return False
@@ -289,7 +232,7 @@ class DoubleCard:
         # play card at new coordinates
         if self.play_card(new_card):
             # set last moved card
-            self.last_moved_card_id = new_card.id
+            self.state.last_moved_card_id = new_card.id
             return True
         else:
             # error was found recycling card
@@ -308,7 +251,7 @@ class DoubleCard:
         other_row, other_col = card.coords2
 
         # Check if card stays within the bounds of the board
-        if card.coords2[0] >= self.num_rows or card.coords2[1] >= self.num_cols:
+        if card.coords2[0] >= GameConstants.NUM_ROWS or card.coords2[1] >= GameConstants.NUM_COLS:
             print('Exceeds limits of the board: {}:{}'.format(card.coords2[0] + 1, self.column_idx_to_letter[card.coords2[1]]))
             return False
 
@@ -343,7 +286,7 @@ class DoubleCard:
         for i in range(1, 4):
             row += offset[0]
             col += offset[1]
-            if row >= 0 and row < self.num_rows and col >= 0 and col < self.num_cols:
+            if row >= 0 and row < GameConstants.NUM_ROWS and col >= 0 and col < GameConstants.NUM_COLS:
                 if val == val_checker(board[row, col]):
                     val_streak += 1
                 else:
@@ -410,7 +353,7 @@ class DoubleCard:
     def check_victory(self, color_streak, fill_streak):
         # Check if victory condition was met
         if color_streak >= 4 and fill_streak >= 4:
-            if self.active_player == Player.COLORS:
+            if self.state.active_player == Player.COLORS:
                 print('Colors have won!')
                 return True
             else:
@@ -431,7 +374,7 @@ class DoubleCard:
         :return: None
         """
         if self.verbose_output:
-            # print(self.board[::-1, :, 0])
+            # print(self.state.board[::-1, :, 0])
             pass
 
     @staticmethod

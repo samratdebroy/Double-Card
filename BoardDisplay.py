@@ -1,13 +1,12 @@
 import tkinter as tk
 import math
-import sys
 import os
 
 from threading import Thread
+from Cell import Cell
 
-from DoubleCard import Card, Cell, Dir
 
-def closeProgram():
+def close_program():
     os._exit(0)
 
 class BoardDisplay(Thread):
@@ -42,26 +41,27 @@ class BoardDisplay(Thread):
         cell1CircleFilled = cell.fill == Cell.FILLED
         cell2CircleFilled = cell.other.fill == Cell.FILLED
 
-        self.pieces[(row, col)] = (cell1X, cell1Y, cell1BackgroundColor, cell1CircleFilled, cell2X, cell2Y, cell2BackgroundColor, cell2CircleFilled)
+        self.pieces[(row, col)] = (cell1X, cell1Y, cell1BackgroundColor, cell1CircleFilled, cell2X, cell2Y,
+                                   cell2BackgroundColor, cell2CircleFilled)
     
-    def removePiece(self, row, col):
+    def remove_piece(self, row, col):
         del self.pieces[(row, col)]
 
     def run(self):
         self.display = tk.Tk()
         self.display.title("Deep Garbagio")
         self.display.resizable(False, False)
-        self.display.protocol("WM_DELETE_WINDOW", closeProgram)
+        self.display.protocol("WM_DELETE_WINDOW", close_program)
         self.canvas = tk.Canvas(self.display, width=self.width, height=self.height)
         self.canvas.pack()
-        self.canvas.after(16, self.__redraw)
+        self.canvas.after(16, self._redraw)
         self.horizontal_label = tk.Label(self.display, text='A  B  C  D  E  F  G  H', fg="white",
                                         bg="#2F2F2F", font="Courier 22")
-        self.vertical_label = tk.Label(self.display, text='12\n\n11\n\n10\n\n9\n\n8\n\n7\n\n6\n\n5\n\n4\n\n3\n\n2\n\n1', fg="white",
-                                        bg="black", font="Courier 17")
+        self.vertical_label = tk.Label(self.display, text='12\n\n11\n\n10\n\n9\n\n8\n\n7\n\n6\n\n5\n\n4\n\n3\n\n2\n\n1',
+                                       fg="white", bg="black", font="Courier 17")
         tk.mainloop()
 
-    def __redraw(self):
+    def _redraw(self):
         if self.canvas is not None:
             self.canvas.delete(tk.ALL)
 
@@ -77,8 +77,8 @@ class BoardDisplay(Thread):
                                          self.pixelPerGridSquare - 1, (self.pixelPerGridSquare * self.num_rows) - 1,
                                          fill="black", width=2)
             self.canvas.create_rectangle(self.pixelPerGridSquare * (self.num_cols - 1), 0,
-                                         self.pixelPerGridSquare * self.num_cols, (self.pixelPerGridSquare * self.num_rows) - 1,
-                                         fill="black", width=2)
+                                         self.pixelPerGridSquare * self.num_cols,
+                                         (self.pixelPerGridSquare * self.num_rows) - 1, fill="black", width=2)
 
             # top border
             self.canvas.create_polygon(0, 0,
@@ -89,29 +89,38 @@ class BoardDisplay(Thread):
             # bottom border
             self.canvas.create_polygon(0, self.pixelPerGridSquare * self.num_rows,
                                        self.pixelPerGridSquare - 1, self.pixelPerGridSquare*(self.num_rows - 1),
-                                       self.pixelPerGridSquare*(self.num_cols - 1), self.pixelPerGridSquare*(self.num_rows - 1),
+                                       self.pixelPerGridSquare*(self.num_cols - 1),
+                                       self.pixelPerGridSquare*(self.num_rows - 1),
                                        self.pixelPerGridSquare * self.num_cols, self.pixelPerGridSquare*self.num_rows,
                                        fill="#2F2F2F", width=2)
 
             # drawing grid labeling
-            self.canvas.create_window((self.pixelPerGridSquare*self.num_cols) / 2, self.pixelPerGridSquare*(self.num_rows - 0.5), window=self.horizontal_label)
-            self.canvas.create_window(self.pixelPerGridSquare / 2, (self.pixelPerGridSquare*self.num_rows) / 2, window=self.vertical_label)
+            self.canvas.create_window((self.pixelPerGridSquare*self.num_cols) / 2,
+                                      self.pixelPerGridSquare*(self.num_rows - 0.5), window=self.horizontal_label)
+            self.canvas.create_window(self.pixelPerGridSquare / 2, (self.pixelPerGridSquare*self.num_rows) / 2,
+                                      window=self.vertical_label)
 
             # draw pieces
             for piece in self.pieces.copy().values():
                 # draw squares
-                self.canvas.create_rectangle(piece[0], piece[1], piece[0] + self.pixelPerGridSquare, piece[1] + self.pixelPerGridSquare, fill=piece[2], width=0)
-                self.canvas.create_rectangle(piece[4], piece[5], piece[4] + self.pixelPerGridSquare, piece[5] + self.pixelPerGridSquare, fill=piece[6], width=0)
+                self.canvas.create_rectangle(piece[0], piece[1],
+                                             piece[0] + self.pixelPerGridSquare, piece[1] + self.pixelPerGridSquare,
+                                             fill=piece[2], width=0)
+                self.canvas.create_rectangle(piece[4], piece[5],
+                                             piece[4] + self.pixelPerGridSquare, piece[5] + self.pixelPerGridSquare,
+                                             fill=piece[6], width=0)
 
                 # draw circles
                 radius = math.floor(self.pixelPerGridSquare * 0.1)
                 cell1CenterX = math.floor(piece[0] + (self.pixelPerGridSquare / 2.0))
                 cell1CenterY = math.floor(piece[1] + (self.pixelPerGridSquare / 2.0))
-                self.canvas.create_oval(cell1CenterX - radius, cell1CenterY - radius, cell1CenterX + radius, cell1CenterY + radius, fill="black" if piece[3] else "")
+                self.canvas.create_oval(cell1CenterX - radius, cell1CenterY - radius, cell1CenterX + radius,
+                                        cell1CenterY + radius, fill="black" if piece[3] else "")
 
                 cell2CenterX = math.floor(piece[4] + (self.pixelPerGridSquare / 2.0))
                 cell2CenterY = math.floor(piece[5] + (self.pixelPerGridSquare / 2.0))
-                self.canvas.create_oval(cell2CenterX - radius, cell2CenterY - radius, cell2CenterX + radius, cell2CenterY + radius, fill="black" if piece[7] else "")
+                self.canvas.create_oval(cell2CenterX - radius, cell2CenterY - radius, cell2CenterX + radius,
+                                        cell2CenterY + radius, fill="black" if piece[7] else "")
 
             # Draw card borders
             for piece in self.pieces.copy().values():
@@ -121,4 +130,4 @@ class BoardDisplay(Thread):
                 border_y_max = max(piece[1] + self.pixelPerGridSquare, piece[5] + self.pixelPerGridSquare)
                 self.canvas.create_rectangle(border_x, border_y, border_x_max, border_y_max, fill='', width=5)
 
-            self.canvas.after(16, self.__redraw)
+            self.canvas.after(16, self._redraw)
