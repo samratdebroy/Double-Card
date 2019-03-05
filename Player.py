@@ -1,5 +1,6 @@
 import abc
 
+
 class Player(abc.ABC):
     # Winning token
     COLOR_WIN = 0
