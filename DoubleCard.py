@@ -187,8 +187,8 @@ class DoubleCard:
                 row = int(move[6]) - 1
                 new_coord = (row, col)
                 new_card = Card(id=None, orientation=orientation, coords=new_coord)
-                if self.recycle_card((old_row1, old_col1), (old_row2, old_col2), new_card, self.state.board):
-                    pass
+                if self.recycle_card((old_row1, old_col1), (old_row2, old_col2), new_card, self.state):
+                    print('Played a card at coordinate {}:{}'.format(self.column_idx_to_letter[col], row + 1))
 
             # Print Board
             self.visualize_board()
@@ -243,7 +243,8 @@ class DoubleCard:
 
         # validate card removal
         # Ensure the old coordinates correspond to a single card
-        if state.board[coord1].card.id != state.board[coord2].card.id:
+        if not state.board[coord1].card or not state.board[coord2].card or \
+                state.board[coord1].card.id != state.board[coord2].card.id:
             print('Old coordinates do not correspond to a single card')
             return False
 
