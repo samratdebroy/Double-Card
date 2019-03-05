@@ -10,5 +10,5 @@ class BoardState:
         self.recycling_mode = False
         self.game_over = False
         self.board = np.empty((GameConstants.NUM_ROWS, GameConstants.NUM_COLS), dtype=object)
-        self.top_cards = list()  # List of row index where highest card per column is located
+        self.top_empty_cell = np.zeros(GameConstants.NUM_COLS, dtype=int)  # List of highest empty cell per column
         self.active_player = False

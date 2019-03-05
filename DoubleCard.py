@@ -1,5 +1,5 @@
-import numpy as np
 import time
+import BoardHelper
 from GameConstants import GameConstants
 from Cell import Cell
 from Card import Card
@@ -27,12 +27,13 @@ class DoubleCard:
             for col in range(GameConstants.NUM_COLS):
                 self.state.board[row, col] = Cell((row, col))
 
-    def play(self, input_file=None):
+    def play(self, input_file=None, exit_after_input=False):
         """
         Loops through game states until the game is over
         :return: None
         """
-        self.display.start()
+        if not exit_after_input:
+            self.display.start()
 
         # Initialize players
         if input_file:
@@ -51,7 +52,10 @@ class DoubleCard:
                     # If end of file reached give control back to user
                     if move == []:
                         input_file = None
-                        continue
+                        if exit_after_input:
+                            break
+                        else:
+                            continue
                 else:
                     move = input("Enter your move (0 orientation column row)\n").split()
             except:
@@ -137,8 +141,8 @@ class DoubleCard:
 
             new_coord = (row, col)
             new_card = Card(id=None, orientation=orientation_val, coords=new_coord)
-            if self.recycle_card((old_row1, old_col1), (old_row2, old_col2), new_card, self.state.board):
-                pass
+            if self.recycle_card((old_row1, old_col1), (old_row2, old_col2), new_card, self.state):
+                print('Played a card at coordinate {}:{}'.format(self.column_idx_to_letter[col], row + 1))
 
         # Print Board
         self.visualize_board()
@@ -157,7 +161,7 @@ class DoubleCard:
         if self.valid_move(card, self.state.board):
                 # Place card in the board
                 # set board cell values
-                DoubleCard.fill_cells(card, self.state.board)
+                BoardHelper.fill_cells(card, self.state)
 
                 if old_coord:
                     self.display.remove_piece(*old_coord)
@@ -173,7 +177,7 @@ class DoubleCard:
         else:
             return False
 
-    def recycle_card(self, coord1, coord2, new_card, board):
+    def recycle_card(self, coord1, coord2, new_card, state):
         """
         Moves a card from one location to another on the board
         :param coord1: The 1st coordinate at which the player attempts to take a card
@@ -181,33 +185,29 @@ class DoubleCard:
         :param new_card: The coordinate at which the player attempts to place the card
         :return: True if a valid card was played, false otherwise
         """
-
         new_row, new_col = new_card.coords1
 
         old_row2 = coord2[0]
         # Ensure that the bottom-left cell is regarded as the first cell of the card
         if coord2[0] < coord1[0] or coord2[1] < coord1[1]:
-            temp = (coord1[0], coord1[1])
-            coord1[0] = coord2[0]
-            coord1[1] = coord2[1]
-            coord2[0] = temp[0]
-            coord2[1] = temp[1]
-
+            temp = coord1
+            coord1 = coord2
+            coord2 = temp
 
         # validate card removal
         # Ensure the old coordinates correspond to a single card
-        if board[coord1].card.id != board[coord2].card.id:
+        if state.board[coord1].card.id != state.board[coord2].card.id:
             print('Old coordinates do not correspond to a single card')
             return False
 
         # get old card
-        old_card = board[coord1].card
+        old_card = state.board[coord1].card
         new_card.id = old_card.id   # Now that you've validated the old card, ensure the new card has same ID
 
         # Ensure that there is no card above selected card
         above_coord2 = tuple((coord2 + Dir.UP).tolist())
         above_coord1 = tuple((coord1 + Dir.UP).tolist())
-        if board[above_coord2].card or (board[above_coord1].card and old_card.horizontal):
+        if state.board[above_coord2].card or (state.board[above_coord1].card and old_card.horizontal):
             print('The cells above the old coordinates are occupied. {}:{} and {}:{} cannot be moved since'
                   ' otherwise the cards above will float over empty cells'
                   .format(coord1[0] + 1, self.column_idx_to_letter[coord1[1]],
@@ -227,17 +227,24 @@ class DoubleCard:
             return False
 
         # set value of old card's location to Empty
-        board[coord1].clear()
-        board[coord2].clear()
+        state.board[coord1].clear()
+        state.board[coord2].clear()
+        # Decrement highest empty cell values
+        if old_card.horizontal:
+            state.top_empty_cell[old_card.coords1[1]] -= 1
+            state.top_empty_cell[old_card.coords2[1]] -= 1
+        else:
+            state.top_empty_cell[old_card.coords1[1]] -= 2
+
         # play card at new coordinates
-        if self.play_card(new_card):
+        if self.play_card(new_card, old_card.coords1):
             # set last moved card
             self.state.last_moved_card_id = new_card.id
             return True
         else:
             # error was found recycling card
             # Place the old card back in place
-            DoubleCard.fill_cells(old_card, board)
+            BoardHelper.fill_cells(old_card, state)
             return False
 
     def valid_move(self, card, board):
@@ -255,7 +262,6 @@ class DoubleCard:
             print('Exceeds limits of the board: {}:{}'.format(card.coords2[0] + 1, self.column_idx_to_letter[card.coords2[1]]))
             return False
 
-        test = board[card.coords1]
         # Ensure the cells in which the card will be placed are empty
         if board[card.coords1].card or board[card.coords2].card:
             print('There are already cards at cells: {}:{} or {}:{}'
@@ -286,7 +292,7 @@ class DoubleCard:
         for i in range(1, 4):
             row += offset[0]
             col += offset[1]
-            if row >= 0 and row < GameConstants.NUM_ROWS and col >= 0 and col < GameConstants.NUM_COLS:
+            if 0 <= row < GameConstants.NUM_ROWS and 0 <= col < GameConstants.NUM_COLS:
                 if val == val_checker(board[row, col]):
                     val_streak += 1
                 else:
@@ -377,42 +383,6 @@ class DoubleCard:
             # print(self.state.board[::-1, :, 0])
             pass
 
-    @staticmethod
-    def fill_cells(card, board):
-
-        orientation = card.orientation
-        # set the cell values for recently played card
-        if orientation == 1 or orientation == 4:
-            board[card.coords1].color = Cell.RED
-            board[card.coords1].fill = Cell.FILLED
-
-            board[card.coords2].color = Cell.WHITE
-            board[card.coords2].fill = Cell.OPEN
-
-        elif orientation == 2 or orientation == 3:
-            board[card.coords1].color = Cell.WHITE
-            board[card.coords1].fill = Cell.OPEN
-
-            board[card.coords2].color = Cell.RED
-            board[card.coords2].fill = Cell.FILLED
-
-        elif orientation == 6 or orientation == 7:
-            board[card.coords1].color = Cell.WHITE
-            board[card.coords1].fill = Cell.FILLED
-
-            board[card.coords2].color = Cell.RED
-            board[card.coords2].fill = Cell.OPEN
-        else:
-            board[card.coords1].color = Cell.RED
-            board[card.coords1].fill = Cell.OPEN
-
-            board[card.coords2].color = Cell.WHITE
-            board[card.coords2].fill = Cell.FILLED
-
-        board[card.coords1].card = card
-        board[card.coords2].card = card
-        board[card.coords1].other = board[card.coords2]
-        board[card.coords2].other = board[card.coords1]
 
 if __name__ == "__main__":
     DoubleCard().play()

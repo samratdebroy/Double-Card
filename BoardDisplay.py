@@ -9,20 +9,40 @@ from Cell import Cell
 def close_program():
     os._exit(0)
 
+
 class BoardDisplay(Thread):
 
-    def __init__(self, rows, columns, pixelPerGridSquare):
+    def __init__(self, rows, columns, pixelPerGridSquare, states=None):
         Thread.__init__(self)
         self.num_rows = rows + 2  # extra rows for grid labeling
         self.num_cols = columns + 2  # extra cols for grid labeling
         self.pixelPerGridSquare = pixelPerGridSquare
         self.width = self.pixelPerGridSquare * self.num_cols
         self.height = self.pixelPerGridSquare * self.num_rows
-        self.pieces = {}
+        self.pieces = []
+        self.num_states = None
+        self.state_id = 0
+        # Generate a board display for each given state
+        if states:
+            self.num_states = len(states)
+            for state_id, state in enumerate(states):
+                self.pieces.append({})
+                self.state_id = state_id
+                for cell in state.board.flatten():
+                    if cell.card:
+                        self.add_piece(cell)
+        else:
+            self.pieces.append({})
+
         self.display = None
         self.canvas = None
         self.vertical_label = None
         self.horizontal_label = None
+        self.button = None
+
+    def next_state_callback(self):
+        if self.num_states:
+            self.state_id = (self.state_id + 1) % (self.num_states - 1)
 
     def add_piece(self, cell):
         card = cell.card
@@ -41,11 +61,11 @@ class BoardDisplay(Thread):
         cell1CircleFilled = cell.fill == Cell.FILLED
         cell2CircleFilled = cell.other.fill == Cell.FILLED
 
-        self.pieces[(row, col)] = (cell1X, cell1Y, cell1BackgroundColor, cell1CircleFilled, cell2X, cell2Y,
+        self.pieces[self.state_id][(row, col)] = (cell1X, cell1Y, cell1BackgroundColor, cell1CircleFilled, cell2X, cell2Y,
                                    cell2BackgroundColor, cell2CircleFilled)
     
-    def remove_piece(self, row, col):
-        del self.pieces[(row, col)]
+    def remove_piece(self, row, col, state_idx=0):
+        del self.pieces[state_idx][(row, col)]
 
     def run(self):
         self.display = tk.Tk()
@@ -59,6 +79,8 @@ class BoardDisplay(Thread):
                                         bg="#2F2F2F", font="Courier 22")
         self.vertical_label = tk.Label(self.display, text='12\n\n11\n\n10\n\n9\n\n8\n\n7\n\n6\n\n5\n\n4\n\n3\n\n2\n\n1',
                                        fg="white", bg="black", font="Courier 17")
+        self.button = tk.Button(self.display, text="next", command=self.next_state_callback)
+        self.button.pack()
         tk.mainloop()
 
     def _redraw(self):
@@ -101,7 +123,7 @@ class BoardDisplay(Thread):
                                       window=self.vertical_label)
 
             # draw pieces
-            for piece in self.pieces.copy().values():
+            for piece in self.pieces[self.state_id].copy().values():
                 # draw squares
                 self.canvas.create_rectangle(piece[0], piece[1],
                                              piece[0] + self.pixelPerGridSquare, piece[1] + self.pixelPerGridSquare,
@@ -123,7 +145,7 @@ class BoardDisplay(Thread):
                                         cell2CenterY + radius, fill="black" if piece[7] else "")
 
             # Draw card borders
-            for piece in self.pieces.copy().values():
+            for piece in self.pieces[self.state_id].copy().values():
                 border_x = min(piece[0], piece[4])
                 border_y = min(piece[1], piece[5])
                 border_x_max = max(piece[0] + self.pixelPerGridSquare, piece[4] + self.pixelPerGridSquare)
