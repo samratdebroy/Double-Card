@@ -16,7 +16,6 @@ class DoubleCard:
         self.verbose_output = True  # Set to true if you want to see board state in the console after each move
         self.animate = False  # Set to true if you want to see board build itself when running tests
         self.alpha_beta = False  # set the AI algorithm to use alpha beta pruning
-        self.trace = False # trace the mini max
         self.players = list() # list of players
         self.active_player = 0
         self.test_player = None
@@ -39,8 +38,6 @@ class DoubleCard:
             self.test_player = HumanPlayer(0, self.display)
 
         self.alpha_beta = (input("Are you playing with alpha_beta (y) or not (n) \n") == 'y')
-
-        self.trace = (input("Do you want a trace generated (y) or not (n)\n") == 'y')
 
         is_human = int(input("Is Player 1 a Human (0) or an AI (1)\n")) == 0
         if is_human:

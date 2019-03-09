@@ -3,6 +3,7 @@ from Player import Player
 from GameConstants import GameConstants
 from Card import Card
 from Cell import Cell
+import Tracelog as TL
 import BoardHelper
 
 
@@ -17,6 +18,11 @@ class AIPlayer(Player):
         # Grab the next desired state from the minimax algorithm
         if GameConstants.DEMO_MODE:
             next_state, _ = mini_max(state, GameConstants.MINI_MAX_DEPTH, maximizing_player, demo_heuristic)
+
+            if GameConstants.TRACE_MODE:
+                TL.flush_to_file()  # Flush all tracing data to file
+            TL.clear_log()
+
         else:
             # TODO: Implement the comp heuristic and remove the line below
             competition_heuristic = None
@@ -164,6 +170,7 @@ def mini_max(state, depth, maximizing_player, heuristic):
     """
     # return if depth is reached or maximum value is encountered
     if depth <= 0 or state.game_over:
+        TL.num_heuristic_leaf_calls += 1
         return state, heuristic(state)
 
     # recursively call minimax going to node with best value based on level
@@ -178,6 +185,12 @@ def mini_max(state, depth, maximizing_player, heuristic):
                     best_next_state = new_state  # Only want the child of roots to be returned
                 else:
                     best_next_state = state
+
+            TL.root_node_heuristic_value = value  # Adding current node heuristic value to trace
+
+        if depth == 1:
+            TL.level2_node_heuristic_values.append(value)
+
         return best_next_state, value
     else:  # Minimizing Player
         value = float('inf')
@@ -190,6 +203,12 @@ def mini_max(state, depth, maximizing_player, heuristic):
                     best_next_state = new_state  # Only want the child of roots to be returned
                 else:
                     best_next_state = state
+
+            TL.root_node_heuristic_value = value  # Adding current node heuristic value to trace
+
+        if depth == 1:
+            TL.level2_node_heuristic_values.append(value)
+
         return best_next_state, value
 
 
