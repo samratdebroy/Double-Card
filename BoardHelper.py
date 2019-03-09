@@ -1,4 +1,6 @@
 from Cell import Cell
+from GameConstants import GameConstants
+from Player import Player
 
 
 def fill_cells(card, state):
@@ -44,6 +46,8 @@ def fill_cells(card, state):
     else:
         state.top_empty_cell[card.coords1[1]] = max(card.coords1[0] + 1, card.coords2[0] + 1)
 
+    state.cards[card.id] = card
+
 
 def remove_cells(coord1, coord2, state):
     # set the cell values for recently removed card
@@ -53,3 +57,100 @@ def remove_cells(coord1, coord2, state):
     #  Update the state of the highest empty cell in the newly unoccupied columns
     state.top_empty_cell[coord1[1]] -= 1
     state.top_empty_cell[coord2[1]] -= 1
+
+
+def victory_move(coord, state):
+    """
+    Checks if the placement of the new card triggered a victory
+    :param coord: The coordinate on the board where the last card was placed that needs to be checked for victory
+    :param state: The board state on which to check if victory has been achieved
+    :return: True if the play triggers a victory, false otherwise
+    """
+
+    row, col = coord
+    board = state.board
+    color = board[coord].color
+    fill = board[coord].fill
+
+    # Check vertically
+    color_streak = 1
+    fill_streak = 1
+    color_streak += count_streak(color, Cell.get_color, row, col, (-1, 0), board)
+    fill_streak += count_streak(fill, Cell.get_fill, row, col, (-1, 0), board)
+    if check_victory(color_streak, fill_streak, state):
+        return True
+
+    # Check Horizontal
+    color_streak = 1
+    fill_streak = 1
+    color_streak += count_streak(color, Cell.get_color, row, col, (0, 1), board)
+    color_streak += count_streak(color, Cell.get_color, row, col, (0, -1), board)
+    fill_streak += count_streak(fill, Cell.get_fill, row, col, (0, 1), board)
+    fill_streak += count_streak(fill, Cell.get_fill, row, col, (0, -1), board)
+
+    if check_victory(color_streak, fill_streak, state):
+        return True
+
+    # Check Diagonal from bottom left to top right
+    color_streak = 1
+    fill_streak = 1
+    color_streak += count_streak(color, Cell.get_color, row, col, (1, 1), board)
+    color_streak += count_streak(color, Cell.get_color, row, col, (-1, -1), board)
+    fill_streak += count_streak(fill, Cell.get_fill, row, col, (1, 1), board)
+    fill_streak += count_streak(fill, Cell.get_fill, row, col, (-1, -1), board)
+    if check_victory(color_streak, fill_streak, state):
+        return True
+
+    # Check Diagonal from top left to bottom right
+    color_streak = 1
+    fill_streak = 1
+    color_streak += count_streak(color, Cell.get_color, row, col, (-1, 1), board)
+    color_streak += count_streak(color, Cell.get_color, row, col, (1, -1), board)
+    fill_streak += count_streak(fill, Cell.get_fill, row, col, (-1, 1), board)
+    fill_streak += count_streak(fill, Cell.get_fill, row, col, (1, -1), board)
+    if check_victory(color_streak, fill_streak, state):
+        return True
+
+    return False
+
+
+def check_victory(color_streak, fill_streak, state):
+    # Check if victory condition was met
+    if color_streak >= 4 or fill_streak >= 4:
+        state.game_over = True
+
+    if color_streak >= 4 and fill_streak >= 4:
+        if state.active_player == Player.COLOR_WIN:
+            # print('Colors have won!')
+            state.winner = Player.COLOR_WIN
+            return True
+        else:
+            # print('Dots have won!')
+            state.winner = Player.DOT_WIN
+            return True
+    elif color_streak >= 4:
+        # print('Colors have won!')
+        state.winner = Player.COLOR_WIN
+        return True
+    elif fill_streak >= 4:
+        # print('Dots have won!')
+        state.winner = Player.DOT_WIN
+        return True
+    return False
+
+
+def count_streak(val, val_checker, row, col, offset, board):
+    # Count to the left of the cell for color
+    val_streak = 0
+    for i in range(1, 4):
+        row += offset[0]
+        col += offset[1]
+        if 0 <= row < GameConstants.NUM_ROWS and 0 <= col < GameConstants.NUM_COLS:
+            if val == val_checker(board[row, col]):
+                val_streak += 1
+            else:
+                break
+        else:
+            break
+
+    return val_streak

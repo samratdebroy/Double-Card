@@ -219,7 +219,7 @@ class DoubleCard:
                     print("Victory condition was met!")
                     self.state.game_over = True
                 # after playing card set last moved card id
-                self.state.last_moved_card_id = card.id
+                self.state.last_moved_card = card
                 return True
         else:
             return False
@@ -269,7 +269,7 @@ class DoubleCard:
             return False
 
         # check if current card is the same as last card played
-        if self.state.last_moved_card_id == old_card.id:
+        if self.state.last_moved_card.id == old_card.id:
             print('Last card was moved from: {}:{}, you cannot move this card again this turn'
                   .format(coord1[0], self.column_idx_to_letter[coord1[1]]))
             return False
@@ -287,7 +287,7 @@ class DoubleCard:
         # play card at new coordinates
         if self.play_card(new_card, old_card.coords1):
             # set last moved card
-            self.state.last_moved_card_id = new_card.id
+            self.state.last_moved_card = new_card
             return True
         else:
             # error was found recycling card

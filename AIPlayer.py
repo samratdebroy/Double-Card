@@ -2,6 +2,7 @@ import copy
 from Player import Player
 from GameConstants import GameConstants
 from Card import Card
+from Cell import Cell
 import BoardHelper
 
 
@@ -10,8 +11,27 @@ class AIPlayer(Player):
     def __init__(self, winning_token):
         Player.__init__(self, winning_token)
 
-    def play_turn(self):
-        pass
+    def play_turn(self, state, display):
+        maximizing_player = (self.winning_token == Player.COLOR_WIN)
+
+        # Grab the next desired state from the minimax algorithm
+        if GameConstants.DEMO_MODE:
+            next_state, _ = mini_max(state, GameConstants.MINI_MAX_DEPTH, maximizing_player, demo_heuristic)
+        else:
+            # TODO: Implement the comp heuristic and remove the line below
+            competition_heuristic = None
+            next_state, _ = mini_max(state, GameConstants.MINI_MAX_DEPTH, maximizing_player, competition_heuristic)
+
+        # Update the board display
+        if next_state.recycling_mode:
+            removed_card = state.cards[next_state.last_moved_card.id]
+            coord1 = removed_card.coords1
+            display.remove_piece(coord1[0], coord1[1])
+        card = next_state.last_moved_card
+        display.add_piece(next_state.board[card.coords1])
+
+        # Update the Board State
+        return next_state
 
 
 def generate_next_board_states(state):
@@ -22,9 +42,11 @@ def generate_next_board_states(state):
     """
 
     # If the max number of turns has been reached, then the game is over
-    if state.turn_number == GameConstants.MAX_TURN_NUMBER:
+    if state.turn_number == GameConstants.MAX_TURN_NUMBER or state.game_over:
+        state.game_over = True
         return []
 
+    state_list = list()
     # Generate a new state with updated meta data for the next turn
     new_state = copy.deepcopy(state)
     new_state.turn_number += 1
@@ -32,15 +54,20 @@ def generate_next_board_states(state):
     new_state.active_player = not state.active_player
 
     if not state.recycling_mode:
-        return generate_next_placed_board_states(new_state)
+        state_list = generate_next_placed_board_states(new_state)
     else:
         # For each card you can remove, make a new state and call generate_next_placed_board_states on it
         # Append all the possible next states into a super list of board states and return
         states_with_removed_cards = generate_next_removed_board_states(state)
-        state_list = list()
         for state, old_card in states_with_removed_cards:
             state_list.extend(generate_next_placed_board_states(state, old_card))
-        return state_list
+
+    # For each state generated, check if it triggered a victory condition and set its game_over values appropriately
+    for state in state_list:
+        BoardHelper.victory_move(state.last_moved_card.coords1, state)
+        BoardHelper.victory_move(state.last_moved_card.coords2, state)
+
+    return state_list
 
 
 def generate_next_placed_board_states(state, old_card=None):
@@ -89,7 +116,7 @@ def generate_board_states_placement(state, coord, id, old_card, orientations):
         if old_card and old_card.orientation == new_card.orientation and old_card.coords1 == new_card.coords1:
             continue
         BoardHelper.fill_cells(new_card, new_state)
-        state.last_moved_card_id = new_card.id
+        state.last_moved_card = new_card
         state_list.append(new_state)
 
     return state_list
@@ -124,3 +151,64 @@ def generate_next_removed_board_states(state):
             state_list.append((new_state, card_below))
 
     return state_list
+
+
+def mini_max(state, depth, maximizing_player, heuristic):
+    """
+    Given the current state of the game, finds next best move using minimax algorithm
+    :param state: current board state
+    :param depth: maximum depth of minimax tree
+    :param maximizing_player: True if the current player is trying to maximize the score
+    :param heuristic: The heuristic function called on the board state
+    :return: next best move Card object and the value of the winning heuristic
+    """
+    # return if depth is reached or maximum value is encountered
+    if depth == 0 or state.game_over:
+        return state, heuristic(state)
+
+    # recursively call minimax going to node with best value based on level
+    if maximizing_player:
+        value = float('-inf')
+        best_next_state = None
+        for next_state in generate_next_board_states(state):
+            new_state, new_value = mini_max(next_state, depth - 1, False, heuristic)
+            if new_value > value:
+                value = new_value
+                best_next_state = new_state
+        return best_next_state, value
+    else:  # Minimizing Player
+        value = float('inf')
+        best_next_state = None
+        for next_state in generate_next_board_states(state):
+            new_state, new_value = mini_max(next_state, depth - 1, True, heuristic)
+            if new_value < value:
+                value = new_value
+                best_next_state = new_state
+        return best_next_state, value
+
+
+def demo_heuristic(state):
+    """
+    calculates a heuristic value given the board state
+    :param state: BoardState object
+    """
+
+    # for professor's heuristic
+    # loop through cards list and sum according to specs
+    board_sum = 0
+    coord = lambda c: c.coordinate[0]*GameConstants.NUM_COLS + c.coordinate[1]
+    for _, card in state.cards:
+        card_cells = [state.board[card.coords1], state.board[card.coords2]]
+        for cell in card_cells:
+            if cell.color == Cell.WHITE and cell.fill == Cell.OPEN:
+                board_sum += coord(cell)
+
+            elif cell.color == Cell.WHITE and cell.fill == Cell.FILLED:
+                board_sum += 3*(coord(cell))
+
+            elif cell.color == Cell.RED and cell.fill == Cell.FILLED:
+                board_sum -= 2*(coord(cell))
+
+            elif cell.color == Cell.RED and cell.fill == Cell.OPEN:
+                board_sum -= 1.5*(coord(cell))
+    return board_sum

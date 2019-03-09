@@ -11,5 +11,5 @@ class Player(abc.ABC):
 
     # Override in derived class
     @abc.abstractmethod
-    def play_turn(self):
+    def play_turn(self, state, display):
         pass
