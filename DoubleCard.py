@@ -7,6 +7,8 @@ from HumanPlayer import HumanPlayer
 from AIPlayer import AIPlayer
 from Player import Player
 
+import cProfile, pstats, io
+from pstats import SortKey
 
 class DoubleCard:
 
@@ -85,7 +87,15 @@ class DoubleCard:
             else:
                 if self.animate:
                     time.sleep(0.1)
+                pr = cProfile.Profile()
+                pr.enable()
                 self.state = self.players[self.active_player].play_turn(self.state)
+                pr.disable()
+                s = io.StringIO()
+                sortby = SortKey.CUMULATIVE
+                ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+                ps.print_stats()
+                print(s.getvalue())
                 self.print_move()
                 self.increment_turn_number()
                 # self.active_player = (self.active_player + 1) % (len(self.players) - 1)  # Cycle through player idx
