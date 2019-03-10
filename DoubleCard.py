@@ -39,6 +39,8 @@ class DoubleCard:
 
         self.alpha_beta = (input("Are you playing with alpha_beta (y) or not (n) \n") == 'y')
 
+        GameConstants.TRACE_MODE = (input("Do you have the program to generate a trace file? (y) or not (n) \n") == 'y')
+
         is_human = int(input("Is Player 1 a Human (0) or an AI (1)\n")) == 0
         if is_human:
             self.players.append(HumanPlayer(None, self.display))
