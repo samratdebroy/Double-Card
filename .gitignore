@@ -2,3 +2,6 @@
 venv/
 .vscode/
 __pycache__/
+venv1/
+venv2/
+trace.txt

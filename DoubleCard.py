@@ -6,6 +6,7 @@ from BoardDisplay import BoardDisplay
 from HumanPlayer import HumanPlayer
 from AIPlayer import AIPlayer
 from Player import Player
+import cProfile, pstats, io
 
 
 class DoubleCard:
@@ -19,6 +20,7 @@ class DoubleCard:
         self.players = list() # list of players
         self.active_player = 0
         self.test_player = None
+        self.profile = False
 
         # Initialize the board with empty cells
         for row in range(GameConstants.NUM_ROWS):
@@ -84,7 +86,18 @@ class DoubleCard:
             else:
                 if self.animate:
                     time.sleep(0.1)
+                if self.profile:
+                    pr = cProfile.Profile()
+                    pr.enable()
                 self.state = self.players[self.active_player].play_turn(self.state)
+                if self.profile:
+                    pr.disable()
+                    s = io.StringIO()
+                    # sortby = pstats.SortKey.CUMULATIVE
+                    ps = pstats.Stats(pr, stream=s).sort_stats('cumulative')
+                    ps.print_stats()
+                    print(s.getvalue())
+
                 self.print_move()
                 self.increment_turn_number()
                 # self.active_player = (self.active_player + 1) % (len(self.players) - 1)  # Cycle through player idx
