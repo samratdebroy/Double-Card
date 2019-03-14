@@ -104,7 +104,8 @@ class DoubleCard:
                 self.active_player = not self.active_player
 
     def increment_turn_number(self):
-        if not isinstance(self.players[self.active_player], AIPlayer):
+        next_player = (self.active_player + 1) % (len(self.players))
+        if not isinstance(self.players[next_player], AIPlayer):
             self.state.turn_number += 1
         if self.state.turn_number == GameConstants.MAX_TURN_NUMBER:
             self.state.game_over = True
