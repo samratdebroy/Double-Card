@@ -29,7 +29,7 @@ class AIPlayer(Player):
             next_state, _ = mini_max(state, GameConstants.MINI_MAX_DEPTH, maximizing_player, competition_heuristic)
 
         # Update the board display
-        if next_state.recycling_mode:
+        if state.recycling_mode:
             removed_card = state.cards[next_state.last_moved_card.id]
             coord1 = removed_card.coords1
             self.display.remove_piece(coord1[0], coord1[1])
@@ -64,7 +64,7 @@ def generate_next_board_states(state):
     else:
         # For each card you can remove, make a new state and call generate_next_placed_board_states on it
         # Append all the possible next states into a super list of board states and return
-        states_with_removed_cards = generate_next_removed_board_states(state)
+        states_with_removed_cards = generate_next_removed_board_states(new_state)
         for state, old_card in states_with_removed_cards:
             state_list.extend(generate_next_placed_board_states(state, old_card))
 

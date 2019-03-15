@@ -48,6 +48,8 @@ class DoubleCard:
             self.players.append(HumanPlayer(None, self.display))
         else:
             self.players.append(AIPlayer(None, self.display))
+            # HACK: SHOULD FIX THIS IN A CLEANER WAY
+            # self.state.turn_number = -1  # If the first player is an AI, start at -1
 
         is_human = int(input("Is Player 2 a Human (0) or an AI (1)\n")) == 0
         if is_human:
@@ -107,6 +109,7 @@ class DoubleCard:
         next_player = (self.active_player + 1) % (len(self.players))
         if not isinstance(self.players[next_player], AIPlayer):
             self.state.turn_number += 1
+
         if self.state.turn_number == GameConstants.MAX_TURN_NUMBER:
             self.state.game_over = True
             print('The max turn number has been reached, the game ends in a draw')
