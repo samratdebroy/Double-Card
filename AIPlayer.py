@@ -2,31 +2,24 @@ import copy
 from Player import Player
 from GameConstants import GameConstants
 from Card import Card
-from Cell import Cell
 import Tracelog as TL
 import BoardHelper
 
-
 class AIPlayer(Player):
 
-    def __init__(self, winning_token, display):
+    def __init__(self, winning_token, display, heuristic):
         Player.__init__(self, winning_token, display)
+        self.heuristic = heuristic
 
     def play_turn(self, state):
         maximizing_player = (self.winning_token == Player.COLOR_WIN)
 
         # Grab the next desired state from the minimax algorithm
-        if GameConstants.DEMO_MODE:
-            next_state, _ = mini_max(state, GameConstants.MINI_MAX_DEPTH, maximizing_player, demo_heuristic)
+        next_state, _ = mini_max(state, GameConstants.MINI_MAX_DEPTH, maximizing_player, self.heuristic)
 
-            if GameConstants.TRACE_MODE:
-                TL.flush_to_file()  # Flush all tracing data to file
-            TL.clear_log()
-
-        else:
-            # TODO: Implement the comp heuristic and remove the line below
-            competition_heuristic = None
-            next_state, _ = mini_max(state, GameConstants.MINI_MAX_DEPTH, maximizing_player, competition_heuristic)
+        if GameConstants.TRACE_MODE:
+            TL.flush_to_file()  # Flush all tracing data to file
+        TL.clear_log()
 
         # Update the board display
         if state.recycling_mode:
@@ -56,7 +49,7 @@ def generate_next_board_states(state):
     # Generate a new state with updated meta data for the next turn
     new_state = copy.deepcopy(state)
     new_state.turn_number += 1
-    new_state.recycling_mode = new_state.turn_number >= GameConstants.MAX_CARDS_IN_GAME
+    new_state.recycling_mode = new_state.turn_number >= GameConstants.MAX_CARDS_IN_GAME - 1
     new_state.active_player = not state.active_player
 
     if not state.recycling_mode:
@@ -211,29 +204,3 @@ def mini_max(state, depth, maximizing_player, heuristic):
 
         return best_next_state, value
 
-
-def demo_heuristic(state):
-    """
-    calculates a heuristic value given the board state
-    :param state: BoardState object
-    """
-
-    # for professor's heuristic
-    # loop through cards list and sum according to specs
-    board_sum = 0
-    coord = lambda c: c.coordinate[0]*GameConstants.NUM_COLS + c.coordinate[1]
-    for card in state.cards.values():
-        card_cells = [state.board[card.coords1], state.board[card.coords2]]
-        for cell in card_cells:
-            if cell.color == Cell.WHITE and cell.fill == Cell.OPEN:
-                board_sum += coord(cell)
-
-            elif cell.color == Cell.WHITE and cell.fill == Cell.FILLED:
-                board_sum += 3*(coord(cell))
-
-            elif cell.color == Cell.RED and cell.fill == Cell.FILLED:
-                board_sum -= 2*(coord(cell))
-
-            elif cell.color == Cell.RED and cell.fill == Cell.OPEN:
-                board_sum -= 1.5*(coord(cell))
-    return board_sum

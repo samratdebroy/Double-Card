@@ -7,7 +7,7 @@ from HumanPlayer import HumanPlayer
 from AIPlayer import AIPlayer
 from Player import Player
 import cProfile, pstats, io
-
+import heuristics
 
 class DoubleCard:
 
@@ -17,7 +17,7 @@ class DoubleCard:
         self.verbose_output = True  # Set to true if you want to see board state in the console after each move
         self.animate = False  # Set to true if you want to see board build itself when running tests
         self.alpha_beta = False  # set the AI algorithm to use alpha beta pruning
-        self.players = list() # list of players
+        self.players = list()  # list of players
         self.active_player = 0
         self.test_player = None
         self.profile = False
@@ -47,15 +47,15 @@ class DoubleCard:
         if is_human:
             self.players.append(HumanPlayer(None, self.display))
         else:
-            self.players.append(AIPlayer(None, self.display))
+            self.players.append(AIPlayer(None, self.display, heuristic=heuristics.competition_heuristic))
             # HACK: SHOULD FIX THIS IN A CLEANER WAY
-            # self.state.turn_number = -1  # If the first player is an AI, start at -1
+            self.state.turn_number = -1  # If the first player is an AI, start at -1
 
         is_human = int(input("Is Player 2 a Human (0) or an AI (1)\n")) == 0
         if is_human:
             self.players.append(HumanPlayer(None, self.display))
         else:
-            self.players.append(AIPlayer(None, self.display))
+            self.players.append(AIPlayer(None, self.display, heuristic=heuristics.competition_heuristic))
 
         self.players[0].winning_token = int(input("Is player 1 playing for colors(0) or dots(1)\n"))
         self.players[1].winning_token = int(not self.players[0].winning_token)

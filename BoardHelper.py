@@ -139,12 +139,12 @@ def check_victory(color_streak, fill_streak, state):
     return False
 
 
-def count_streak(val, val_checker, row, col, offset, board):
-    # Count to the left of the cell for color
+def count_streak(val, val_checker, row, col, dir, board):
+    # Count in the direction of dir of the cell for val_checker (color or fill)
     val_streak = 0
     for i in range(1, 4):
-        row += offset[0]
-        col += offset[1]
+        row += dir[0]
+        col += dir[1]
         if 0 <= row < GameConstants.NUM_ROWS and 0 <= col < GameConstants.NUM_COLS:
             if val == val_checker(board[row, col]):
                 val_streak += 1
@@ -154,3 +154,23 @@ def count_streak(val, val_checker, row, col, offset, board):
             break
 
     return val_streak
+
+
+def count_streaks_along_line(val_checker, start_row, start_col, dir, board):
+    streak_list = []
+
+    for row in range(start_row, GameConstants.NUM_ROWS):
+        for col in range(start_col, GameConstants.NUM_COLS):
+            # Count the number of continuous values along this line
+            val = val_checker(board[row, col])
+            if val and val != Cell.EMPTY:
+                streak_count = 1 + count_streak(val, val_checker, start_row, start_col, dir, board)
+                streak_list.append(streak_count)
+            else:
+                streak_count = 1
+
+            row += dir[0] * streak_count
+            col += dir[1] * streak_count
+
+            if row >= GameConstants.NUM_ROWS or col >= GameConstants.NUM_COLS or row < 0 or col < 0:
+                return streak_list
