@@ -21,7 +21,7 @@ class AIPlayer(Player):
         if GameConstants.TRACE_MODE:
             TL.flush_to_file()  # Flush all tracing data to file
         TL.clear_log()
-
+        """
         # Update the board display
         if state.recycling_mode:
             removed_card = state.cards[next_state.last_moved_card.id]
@@ -29,7 +29,7 @@ class AIPlayer(Player):
             self.display.remove_piece(coord1[0], coord1[1])
         card = next_state.last_moved_card
         self.display.add_piece(next_state.board[card.coords1])
-
+        """
         # Update the Board State
         return next_state
 

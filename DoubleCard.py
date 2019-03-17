@@ -47,8 +47,6 @@ class DoubleCard:
             self.players.append(HumanPlayer(None, self.display))
         else:
             self.players.append(AIPlayer(None, self.display, heuristic=heuristics.open_competition_heuristic))
-            # HACK: SHOULD FIX THIS IN A CLEANER WAY
-            self.state.turn_number = -1  # If the first player is an AI, start at -1
 
         is_human = int(input("Is Player 2 a Human (0) or an AI (1)\n")) == 0
         if is_human:
@@ -90,7 +88,22 @@ class DoubleCard:
                 if self.profile:
                     pr = cProfile.Profile()
                     pr.enable()
-                self.state = self.players[self.state.active_player].play_turn(self.state)
+
+                # Extract the new state following the played move
+                temp_state = self.players[self.state.active_player].play_turn(self.state)
+
+                if isinstance(self.players[self.state.active_player], AIPlayer):
+                    # If an AI just played, extract their last move and play it normally like a human
+                    new_move = DoubleCard.extract_last_move(self.state, temp_state)
+                    print('AI Play just played ' + str(new_move))
+
+                    # Simulate a move being played with a Human Player
+                    dummy_player = HumanPlayer(self.players[self.state.active_player].winning_token, self.display)
+                    self.state = dummy_player.next_turn(new_move, self.state)
+                else:
+                    # If it is a human player, play turn will return the proper next state
+                    self.state = temp_state
+
                 if self.profile:
                     pr.disable()
                     s = io.StringIO()
@@ -99,21 +112,36 @@ class DoubleCard:
                     ps.print_stats()
                     print(s.getvalue())
 
-                # Flip active player if current player was an AI
-                next_player = (self.state.active_player + 1) % (len(self.players))
-                if isinstance(self.players[next_player], AIPlayer):
-                    self.state.active_player = not self.state.active_player
-
                 self.print_move()
                 self.increment_turn_number()
 
                 # Flip active player if current player was not an AI
                 self.state.active_player = not self.state.active_player
 
+    @staticmethod
+    def extract_last_move(last_state, new_state):
+
+        new_moved_card = new_state.last_moved_card
+        # new coordinate should be lower-left coordinate of new card placement
+        if new_moved_card.coords1[0] <= new_moved_card.coords2[0]:
+            new_coord = new_moved_card.coords1
+        else:
+            new_coord = new_moved_card.coords2
+
+        col = GameConstants.COLUMN_IDX_TO_LETTER
+        if last_state.recycling_mode:
+            removed_card = last_state.cards[new_moved_card.id]
+            coord1 = removed_card.coords1
+            coord2 = removed_card.coords2
+            return '{} {} {} {} {} {} {}'.format(col[coord1[1]], coord1[0] + 1, col[coord2[1]], coord2[0] + 1,
+                                                 new_moved_card.orientation, col[new_coord[1]],
+                                                 new_coord[0] + 1).split()
+        else:
+            return '{} {} {} {}'.format(0, new_moved_card.orientation, col[new_coord[1]],
+                                        new_coord[0] + 1).split()
+
     def increment_turn_number(self):
-        next_player = (self.state.active_player + 1) % (len(self.players))
-        if not isinstance(self.players[next_player], AIPlayer):
-            self.state.turn_number += 1
+        self.state.turn_number += 1
 
         if self.state.turn_number == GameConstants.MAX_TURN_NUMBER:
             self.state.game_over = True
