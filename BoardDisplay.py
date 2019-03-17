@@ -43,6 +43,7 @@ class BoardDisplay(Thread):
     def next_state_callback(self):
         if self.num_states:
             self.state_id = (self.state_id + 1) % (self.num_states - 1)
+            self.button["text"] = "state {}".format(self.state_id)
 
     def add_piece(self, cell):
         card = cell.card

@@ -15,7 +15,8 @@ class AIPlayer(Player):
         maximizing_player = (self.winning_token == Player.COLOR_WIN)
 
         # Grab the next desired state from the minimax algorithm
-        next_state, _ = mini_max(state, GameConstants.MINI_MAX_DEPTH, maximizing_player, self.heuristic)
+        next_state, heuristic_val = mini_max(state, GameConstants.MINI_MAX_DEPTH, maximizing_player, self.heuristic)
+        print("heuristic_val of this move was: " + str(heuristic_val))
 
         if GameConstants.TRACE_MODE:
             TL.flush_to_file()  # Flush all tracing data to file
@@ -190,6 +191,7 @@ def mini_max(state, depth, maximizing_player, heuristic):
         best_next_state = None
         for next_state in generate_next_board_states(state):
             new_state, new_value = mini_max(next_state, depth - 1, True, heuristic)
+
             if new_value < value:
                 value = new_value
                 if depth == GameConstants.MINI_MAX_DEPTH:

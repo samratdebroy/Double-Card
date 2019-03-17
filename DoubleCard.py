@@ -18,7 +18,6 @@ class DoubleCard:
         self.animate = False  # Set to true if you want to see board build itself when running tests
         self.alpha_beta = False  # set the AI algorithm to use alpha beta pruning
         self.players = list()  # list of players
-        self.active_player = 0
         self.test_player = None
         self.profile = False
 
@@ -39,15 +38,15 @@ class DoubleCard:
         if input_file:
             self.test_player = HumanPlayer(0, self.display)
 
-        self.alpha_beta = (input("Are you playing with alpha_beta (y) or not (n) \n") == 'y')
+        # self.alpha_beta = (input("Are you playing with alpha_beta (y) or not (n) \n") == 'y')
 
-        GameConstants.TRACE_MODE = (input("Do you have the program to generate a trace file? (y) or not (n) \n") == 'y')
+        # GameConstants.TRACE_MODE = (input("Do you have the program to generate a trace file? (y) or not (n) \n") == 'y')
 
         is_human = int(input("Is Player 1 a Human (0) or an AI (1)\n")) == 0
         if is_human:
             self.players.append(HumanPlayer(None, self.display))
         else:
-            self.players.append(AIPlayer(None, self.display, heuristic=heuristics.competition_heuristic))
+            self.players.append(AIPlayer(None, self.display, heuristic=heuristics.open_competition_heuristic))
             # HACK: SHOULD FIX THIS IN A CLEANER WAY
             self.state.turn_number = -1  # If the first player is an AI, start at -1
 
@@ -55,7 +54,7 @@ class DoubleCard:
         if is_human:
             self.players.append(HumanPlayer(None, self.display))
         else:
-            self.players.append(AIPlayer(None, self.display, heuristic=heuristics.competition_heuristic))
+            self.players.append(AIPlayer(None, self.display, heuristic=heuristics.open_competition_heuristic))
 
         self.players[0].winning_token = int(input("Is player 1 playing for colors(0) or dots(1)\n"))
         self.players[1].winning_token = int(not self.players[0].winning_token)
@@ -91,7 +90,7 @@ class DoubleCard:
                 if self.profile:
                     pr = cProfile.Profile()
                     pr.enable()
-                self.state = self.players[self.active_player].play_turn(self.state)
+                self.state = self.players[self.state.active_player].play_turn(self.state)
                 if self.profile:
                     pr.disable()
                     s = io.StringIO()
@@ -100,13 +99,19 @@ class DoubleCard:
                     ps.print_stats()
                     print(s.getvalue())
 
+                # Flip active player if current player was an AI
+                next_player = (self.state.active_player + 1) % (len(self.players))
+                if isinstance(self.players[next_player], AIPlayer):
+                    self.state.active_player = not self.state.active_player
+
                 self.print_move()
                 self.increment_turn_number()
-                # self.active_player = (self.active_player + 1) % (len(self.players) - 1)  # Cycle through player idx
-                self.active_player = not self.active_player
+
+                # Flip active player if current player was not an AI
+                self.state.active_player = not self.state.active_player
 
     def increment_turn_number(self):
-        next_player = (self.active_player + 1) % (len(self.players))
+        next_player = (self.state.active_player + 1) % (len(self.players))
         if not isinstance(self.players[next_player], AIPlayer):
             self.state.turn_number += 1
 
@@ -116,10 +121,11 @@ class DoubleCard:
         self.set_recycle_mode()
 
     def print_move(self):
-        if self.players[self.active_player].winning_token == Player.COLOR_WIN:
+        if self.players[self.state.active_player].winning_token == Player.COLOR_WIN:
             current_player = "Colors player"
         else:
             current_player = "Dots player"
+
         last_card = self.state.last_moved_card
 
         print('Turn {}: Player {} placed a card at coordinates {}:{} {}:{}'

@@ -1,7 +1,7 @@
 from Cell import Cell
 from GameConstants import GameConstants
 from Player import Player
-
+import numpy as np
 
 def fill_cells(card, state):
     board = state.board
@@ -156,15 +156,14 @@ def count_streak(val, val_checker, row, col, dir, board):
     return val_streak
 
 
-def count_streaks_along_line(val_checker, start_row, start_col, dir, board):
+def count_streaks_along_line(val_checker, row, col, dir, board):
     streak_list = []
 
-    for row in range(start_row, GameConstants.NUM_ROWS):
-        for col in range(start_col, GameConstants.NUM_COLS):
+    while row < GameConstants.NUM_ROWS and col < GameConstants.NUM_COLS and row >= 0 and col >= 0:
             # Count the number of continuous values along this line
             val = val_checker(board[row, col])
             if val and val != Cell.EMPTY:
-                streak_count = 1 + count_streak(val, val_checker, start_row, start_col, dir, board)
+                streak_count = 1 + count_streak(val, val_checker, row, col, dir, board)
                 streak_list.append(streak_count)
             else:
                 streak_count = 1
@@ -172,5 +171,33 @@ def count_streaks_along_line(val_checker, start_row, start_col, dir, board):
             row += dir[0] * streak_count
             col += dir[1] * streak_count
 
-            if row >= GameConstants.NUM_ROWS or col >= GameConstants.NUM_COLS or row < 0 or col < 0:
-                return streak_list
+    return streak_list
+
+def within_bounds(row, col):
+    if row >= GameConstants.NUM_ROWS or col >= GameConstants.NUM_COLS or row < 0 or col < 0:
+        return False
+    return  True
+
+def count_open_streaks_along_line(val_checker, row, col, dir, board):
+    streak_list = []
+
+    while within_bounds(row, col):
+            # Count the number of continuous values along this line
+            val = val_checker(board[row, col])
+            if val and val != Cell.EMPTY:
+                streak_count = 1 + count_streak(val, val_checker, row, col, dir, board)
+
+                # Ensure either end of this streak is empty
+                prev_coord = np.array((row, col)) - dir
+                next_coord = np.array((row, col)) + dir
+                if streak_count >= 4 \
+                        or (within_bounds(next_coord[0], next_coord[1]) and not val_checker(board[next_coord[0], next_coord[1]]))\
+                        or (within_bounds(prev_coord[0], prev_coord[1]) and not val_checker(board[prev_coord[0], prev_coord[1]])):
+                    streak_list.append(streak_count)
+            else:
+                streak_count = 1
+
+            row += dir[0] * streak_count
+            col += dir[1] * streak_count
+
+    return streak_list
