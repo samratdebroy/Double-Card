@@ -16,7 +16,7 @@ class AIPlayer(Player):
 
         # HACK: IF WE'RE GONNA ENTER RECYCLING MODE, SET MAX DEPTH TO 1
         # Also, play the first move with depth 1 because it doesn't matter where you play
-        if state.recycling_mode\
+        if state.turn_number >= GameConstants.MAX_CARDS_IN_GAME - 1\
                 or state.turn_number < 1:
             GameConstants.MINI_MAX_DEPTH = 1
         else:

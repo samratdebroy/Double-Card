@@ -189,7 +189,7 @@ def count_open_streaks_along_line(val_checker, row, col, dir, board):
                 streak_count = 1 + count_streak(val, val_checker, row, col, dir, board)
 
                 # Ensure either end of this streak is empty
-                prev_coord = (row - dir[0] * streak_count, col - dir[1] * streak_count)
+                prev_coord = (row - dir[0], col - dir[1])
                 next_coord = (row + dir[0] * streak_count, col + dir[1] * streak_count)
                 if streak_count >= 4 \
                         or (within_bounds(next_coord[0], next_coord[1]) and not val_checker(board[next_coord[0], next_coord[1]]))\
