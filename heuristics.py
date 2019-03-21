@@ -138,7 +138,7 @@ def open_competition_heuristic(state):
         sign = -1
 
     # Play towards center initially
-    if state.turn_number < 2:
+    if state.turn_number < 1:
         heuristic_val -= sign*abs((GameConstants.NUM_COLS - 1)/2 - state.last_moved_card.coords1[1]) * 999999
 
     # Check for a victory
