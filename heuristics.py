@@ -131,7 +131,27 @@ def open_competition_heuristic(state):
     heuristic_val += color_counter.count(1) - fill_counter.count(1)
     heuristic_val += (color_counter.count(2) - fill_counter.count(2)) * 30
     heuristic_val += (color_counter.count(3) - fill_counter.count(3)) * 200000
-    heuristic_val += (color_counter.count(4) - fill_counter.count(4)) * 100000000000
+
+    if not state.maximizing:
+        sign = 1
+    else:
+        sign = -1
+
+    # Play towards center initially
+    if state.turn_number < 2:
+        heuristic_val -= sign*abs((GameConstants.NUM_COLS - 1)/2 - state.last_moved_card.coords1[1]) * 999999
+
+    # Check for a victory
+    color_win = (4 in color_counter)
+    fill_win = (4 in fill_counter)
+
+    # If both get a 4-streak, the active player is the true winner
+    if color_win and fill_win:
+        heuristic_val = sign * 1000000000
+    elif color_win:
+        heuristic_val = 1000000000
+    elif fill_win:
+        heuristic_val = -1000000000
 
     return heuristic_val
 

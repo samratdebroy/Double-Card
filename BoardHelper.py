@@ -176,7 +176,8 @@ def count_streaks_along_line(val_checker, row, col, dir, board):
 def within_bounds(row, col):
     if row >= GameConstants.NUM_ROWS or col >= GameConstants.NUM_COLS or row < 0 or col < 0:
         return False
-    return  True
+    return True
+
 
 def count_open_streaks_along_line(val_checker, row, col, dir, board):
     streak_list = []
@@ -188,8 +189,8 @@ def count_open_streaks_along_line(val_checker, row, col, dir, board):
                 streak_count = 1 + count_streak(val, val_checker, row, col, dir, board)
 
                 # Ensure either end of this streak is empty
-                prev_coord = np.array((row, col)) - dir
-                next_coord = np.array((row, col)) + dir
+                prev_coord = (row - dir[0] * streak_count, col - dir[1] * streak_count)
+                next_coord = (row + dir[0] * streak_count, col + dir[1] * streak_count)
                 if streak_count >= 4 \
                         or (within_bounds(next_coord[0], next_coord[1]) and not val_checker(board[next_coord[0], next_coord[1]]))\
                         or (within_bounds(prev_coord[0], prev_coord[1]) and not val_checker(board[prev_coord[0], prev_coord[1]])):

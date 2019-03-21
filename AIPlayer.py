@@ -15,8 +15,12 @@ class AIPlayer(Player):
         maximizing_player = (self.winning_token == Player.COLOR_WIN)
 
         # HACK: IF WE'RE GONNA ENTER RECYCLING MODE, SET MAX DEPTH TO 1
-        if GameConstants.MINI_MAX_DEPTH + state.turn_number >= GameConstants.MAX_CARDS_IN_GAME:
+        # Also, play the first move with depth 1 because it doesn't matter where you play
+        if GameConstants.ORIG_MINI_MAX_DEPTH + state.turn_number >= GameConstants.MAX_CARDS_IN_GAME\
+                or state.turn_number < 2:
             GameConstants.MINI_MAX_DEPTH = 1
+        else:
+            GameConstants.MINI_MAX_DEPTH = GameConstants.ORIG_MINI_MAX_DEPTH
 
         # Grab the next desired state from the minimax algorithm
         alpha = float('-inf')
@@ -195,6 +199,7 @@ def mini_max(state, depth, alpha, beta, maximizing_player, heuristic):
     # return if depth is reached or maximum value is encountered
     if depth <= 0 or state.game_over:
         TL.num_heuristic_leaf_calls += 1
+        state.maximizing = maximizing_player
         return state, heuristic(state)
 
     # recursively call minimax going to node with best value based on level
@@ -206,13 +211,14 @@ def mini_max(state, depth, alpha, beta, maximizing_player, heuristic):
             if new_value > value:
                 value = new_value
                 alpha = max(alpha, value)
-                if alpha >= beta:
-                    break
 
                 if depth == GameConstants.MINI_MAX_DEPTH:
                     best_next_state = new_state  # Only want the child of roots to be returned
                 else:
                     best_next_state = state
+
+                if alpha >= beta:
+                    break
 
             TL.root_node_heuristic_value = value  # Adding current node heuristic value to trace
 
@@ -229,13 +235,14 @@ def mini_max(state, depth, alpha, beta, maximizing_player, heuristic):
             if new_value < value:
                 value = new_value
                 beta = min(beta, value)
-                if alpha >= beta:
-                    break
 
                 if depth == GameConstants.MINI_MAX_DEPTH:
                     best_next_state = new_state  # Only want the child of roots to be returned
                 else:
                     best_next_state = state
+
+                if alpha >= beta:
+                    break
 
             TL.root_node_heuristic_value = value  # Adding current node heuristic value to trace
 

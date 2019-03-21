@@ -18,6 +18,7 @@ class BoardState:
         self.heuristic_value = None
         self.winner = None  # Set to Player.COLOR_WIN or Player.DOT_WIN
         self.cards = dict()  # list of cards on board
+        self.maximizing = False
 
     def __deepcopy__(self, memodict={}):
         new_inst = BoardState()
