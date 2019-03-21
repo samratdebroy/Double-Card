@@ -40,19 +40,19 @@ class DoubleCard:
 
         # self.alpha_beta = (input("Are you playing with alpha_beta (y) or not (n) \n") == 'y')
 
-        # GameConstants.TRACE_MODE = (input("Do you have the program to generate a trace file? (y) or not (n) \n") == 'y')
+        GameConstants.TRACE_MODE = (input("Do you have the program to generate a trace file? (y) or not (n) \n") == 'y')
 
         is_human = int(input("Is Player 1 a Human (0) or an AI (1)\n")) == 0
         if is_human:
             self.players.append(HumanPlayer(None, self.display))
         else:
-            self.players.append(AIPlayer(None, self.display, heuristic=heuristics.open_competition_heuristic))
+            self.players.append(AIPlayer(None, self.display, heuristic=heuristics.test_heuristic))
 
         is_human = int(input("Is Player 2 a Human (0) or an AI (1)\n")) == 0
         if is_human:
             self.players.append(HumanPlayer(None, self.display))
         else:
-            self.players.append(AIPlayer(None, self.display, heuristic=heuristics.open_competition_heuristic))
+            self.players.append(AIPlayer(None, self.display, heuristic=heuristics.test_heuristic))
 
         self.players[0].winning_token = int(input("Is player 1 playing for colors(0) or dots(1)\n"))
         self.players[1].winning_token = int(not self.players[0].winning_token)
@@ -104,6 +104,7 @@ class DoubleCard:
                     # If it is a human player, play turn will return the proper next state
                     self.state = temp_state
 
+                self.state.last_moved_card.player = self.players[self.state.active_player]
                 if self.profile:
                     pr.disable()
                     s = io.StringIO()

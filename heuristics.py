@@ -124,11 +124,12 @@ def open_competition_heuristic(state):
             fill_counter.extend(BoardHelper.count_open_streaks_along_line(Cell.get_fill, 0, col, Dir.DIAG_DR, state.board))
 
     heuristic_val = 0
+    #heuristic_val += (GameConstants.NUM_COLS - abs(state.last_moved_card.coords1[1] - GameConstants.NUM_COLS/2)) * 1000000
     heuristic_val += color_counter.count(1) - fill_counter.count(1)
     heuristic_val += (color_counter.count(2) - fill_counter.count(2)) * 30
     heuristic_val += (color_counter.count(3) - fill_counter.count(3)) * 200000
     heuristic_val += (color_counter.count(4) - fill_counter.count(4)) * 100000000000
-
+    # print(heuristic_val)
     return heuristic_val
 
 def test_heuristic(state):
@@ -136,70 +137,117 @@ def test_heuristic(state):
     Test heuristic using streaks
     """
 
-    color_streak_counter = [0]*4
-    fill_streak_counter = [0]*4
-    color_streak = 1
-    fill_streak = 1
+    color_streak_counter = [0]*5
+    fill_streak_counter = [0]*5
+
     heuristic_val = 0
     # check horizontal
     for row in range(0, GameConstants.NUM_ROWS):
-        color_streak = 1
-        fill_streak = 1
+        color_streak = 0
+        fill_streak = 0
         for col in range(0, GameConstants.NUM_COLS-1):
-            if state.board[row][col].color != None:
-                if state.board[row][col].color == state.board[row][col+1].color:
-                    color_streak += 1
-                else:
-                    if color_streak > 4:
-                        color_streak = 4
-                    color_streak_counter[color_streak-1] += 1
-                    color_streak = 1
+            cell1 = state.board[row][col]
+            cell2 = state.board[row][col+1]
+            color_streak, fill_streak = count_streak(cell1, cell2, color_streak_counter, fill_streak_counter, color_streak, fill_streak)
 
-                if state.board[row][col].fill == state.board[row][col+1].fill:
-                    fill_streak += 1
-                else:
-                    if fill_streak > 4:
-                        fill_streak = 4
-                    fill_streak_counter[fill_streak-1] += 1
-                    fill_streak = 1
-            else:
-                fill_streak = 1
-                color_streak = 1
-
-
-    color_streak = 1
-    fill_streak = 1
     # check vertical
     for col in range(0, GameConstants.NUM_COLS):
-        color_streak = 1
-        fill_streak = 1
+        color_streak = 0
+        fill_streak = 0
         for row in range(0, GameConstants.NUM_ROWS-1):
-            if state.board[row][col].color != None:
-                if state.board[row][col].color == state.board[row+1][col].color:
-                    color_streak += 1
-                else:
-                    if color_streak > 4:
-                        color_streak = 4
-                    color_streak_counter[color_streak-1] += 1
-                    color_streak = 1
+            cell1 = state.board[row][col]
+            cell2 = state.board[row+1][col]
+            color_streak, fill_streak = count_streak(cell1, cell2, color_streak_counter, fill_streak_counter, color_streak, fill_streak)
+    
 
-                if state.board[row][col].fill == state.board[row+1][col].fill:
-                    fill_streak += 1
-                else:
-                    if fill_streak > 4:
-                        fill_streak = 4
-                    fill_streak_counter[fill_streak-1] += 1
-                    fill_streak = 1
-            else:
-                fill_streak = 1
-                color_streak = 1
+    # DIAGONAL CHECKS
+    for row in range(3, GameConstants.NUM_ROWS-3):
+        # Check Ascending Diagonals
+        row2 = row
+        col = 0
+        while row2 + Dir.DIAG_UR[0] < GameConstants.NUM_ROWS and col + Dir.DIAG_UR[1] < GameConstants.NUM_COLS and\
+            row2 + Dir.DIAG_UR[0] >= 0 and col + Dir.DIAG_UR[0]>= 0:
+            cell1 = state.board[row2][col]
+            cell2 = state.board[row2+Dir.DIAG_UR[0]][col + Dir.DIAG_UR[1]]
+            color_streak, fill_streak = count_streak(cell1, cell2, color_streak_counter, fill_streak_counter, color_streak, fill_streak)
+
+            row2 += Dir.DIAG_UR[0]
+            col += Dir.DIAG_UR[1]
+
+        row2 = row
+        col = 0
+        
+        while row2 + Dir.DIAG_DR[0] < GameConstants.NUM_ROWS and col + Dir.DIAG_DR[1] < GameConstants.NUM_COLS and\
+            row2 + Dir.DIAG_DR[0] >= 0 and col + Dir.DIAG_DR[0]>= 0:
+
+            cell1 = state.board[row2][col]
+            cell2 = state.board[row2+Dir.DIAG_DR[0]][col + Dir.DIAG_DR[1]]
+            color_streak, fill_streak = count_streak(cell1, cell2, color_streak_counter, fill_streak_counter, color_streak, fill_streak)
+
+            row2 += Dir.DIAG_UR[0]
+            col += Dir.DIAG_UR[1]
+
+    # Check Streaks, moving right along first row
+    for col in range(1, GameConstants.NUM_COLS-3):
+
+        row = 0
+        col2 = col
+        while row + Dir.DIAG_UR[0] < GameConstants.NUM_ROWS and col2 + Dir.DIAG_UR[1] < GameConstants.NUM_COLS and\
+            row + Dir.DIAG_UR[0] >= 0 and col2 + Dir.DIAG_UR[0]>= 0:
+
+            cell1 = state.board[row][col2]
+            cell2 = state.board[row+Dir.DIAG_UR[0]][col2+ Dir.DIAG_UR[1]]
+            color_streak, fill_streak = count_streak(cell1, cell2, color_streak_counter, fill_streak_counter, color_streak, fill_streak)
+
+            row += Dir.DIAG_UR[0]
+            col2 += Dir.DIAG_UR[1]
+
+        row = 0
+        col2 = col
+
+        while row + Dir.DIAG_DR[0] < GameConstants.NUM_ROWS and col + Dir.DIAG_DR[1] < GameConstants.NUM_COLS and\
+            row + Dir.DIAG_DR[0] >= 0 and col + Dir.DIAG_DR[0]>= 0:
+
+            cell1 = state.board[row][col2]
+            cell2 = state.board[row+Dir.DIAG_DR[0]][col2 + Dir.DIAG_DR[1]]
+            color_streak, fill_streak = count_streak(cell1, cell2, color_streak_counter, fill_streak_counter, color_streak, fill_streak)
+
+            row += Dir.DIAG_UR[0]
+            col2 += Dir.DIAG_UR[1]
 
 
-    color_weights = [1, 20, 40, 2000]
-    fill_weights = [1, 20, 40, 2000]
+    color_weights = [1, 30, 200000, 100000000000]
+    fill_weights = [1, 30, 200000, 100000000000]
 
-    for i in range(0, len(color_weights)):
-        heuristic_val += color_streak_counter[i] * color_weights[i]
-        heuristic_val -= fill_streak_counter[i] * fill_weights[i]
+    # heuristic_val += (GameConstants.NUM_COLS - abs(state.last_moved_card.coords1[1] - GameConstants.NUM_COLS/2)) * 40
+
+    heuristic_val += color_streak_counter[1] - fill_streak_counter[1]
+    heuristic_val += color_streak_counter[2] - fill_streak_counter[2] * 30
+    heuristic_val += color_streak_counter[3] - fill_streak_counter[3] * 200000
+    heuristic_val += color_streak_counter[4] - fill_streak_counter[4] * 100000000000
 
     return heuristic_val
+
+
+def count_streak(cell1, cell2, color_streak_list, fill_streak_list, color_streak, fill_streak):
+    if cell1.color != None:
+        if cell1.color == cell2.color:
+            color_streak += 1
+        else:
+            if color_streak > 4:
+                color_streak = 4
+            color_streak_list[color_streak] += 1
+            color_streak = 0
+
+        if cell1.fill == cell2.fill:
+            fill_streak += 1
+        else:
+            if fill_streak > 4:
+                fill_streak = 4
+            fill_streak_list[fill_streak] += 1
+            fill_streak = 0
+    else:
+        fill_streak = 0
+        color_streak = 0
+
+    return color_streak, fill_streak

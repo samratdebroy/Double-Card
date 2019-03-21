@@ -9,7 +9,7 @@ class HumanPlayer(Player):
 
     def __init__(self, winning_token, display):
         Player.__init__(self, winning_token, display)
-        
+
         self.columns = GameConstants.COLUMNS  # Column label mapping
         self.column_idx_to_letter = GameConstants.COLUMN_IDX_TO_LETTER
 
@@ -213,7 +213,7 @@ class HumanPlayer(Player):
                 # Place card in the board
                 # set board cell values
                 BoardHelper.fill_cells(card, state)
-
+                
                 if old_coord:
                     self.display.remove_piece(*old_coord)
                 self.display.add_piece(state.board[card.coords1])

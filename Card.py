@@ -11,6 +11,7 @@ class Card:
         self.horizontal = False
         self.coords1 = coords
         self.coords2 = np.zeros(2)
+        self.player = None
 
         if orientation % 2 == 0:
             # Vertical card
@@ -22,4 +23,3 @@ class Card:
             self.horizontal = True
             coord = self.coords1 + Dir.RIGHT
             self.coords2 = tuple(coord.tolist())
-
