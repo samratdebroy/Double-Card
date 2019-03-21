@@ -14,9 +14,13 @@ class AIPlayer(Player):
     def play_turn(self, state):
         maximizing_player = (self.winning_token == Player.COLOR_WIN)
 
+        # HACK: IF WE'RE GONNA ENTER RECYCLING MODE, SET MAX DEPTH TO 1
+        if GameConstants.MINI_MAX_DEPTH + state.turn_number >= GameConstants.MAX_CARDS_IN_GAME:
+            GameConstants.MINI_MAX_DEPTH = 1
+
         # Grab the next desired state from the minimax algorithm
-        alpha =  float('-inf')
-        beta =  float('inf')
+        alpha = float('-inf')
+        beta = float('inf')
         next_state, heuristic_val = mini_max(state, GameConstants.MINI_MAX_DEPTH, alpha, beta, maximizing_player, self.heuristic)
         print("heuristic_val of this move was: " + str(heuristic_val))
 
@@ -117,6 +121,12 @@ def generate_board_states_placement(state, coord, id, old_card, orientations):
         # Make sure the card is in a new position orientation
         if old_card and old_card.orientation == new_card.orientation and old_card.coords1 == new_card.coords1:
             continue
+
+        # If there already exists a card in the cell then skip
+        #if state.board[new_card.coords1].card or state.board[new_card.coords2].card:
+        #    print('This should never be reached {}'.format(state.top_empty_cell))
+        #    break
+
         BoardHelper.fill_cells(new_card, new_state)
         new_state.last_moved_card = new_card
         state_list.append(new_state)
@@ -129,6 +139,7 @@ def generate_next_removed_board_states(state):
     state_list = list()
     last_horizontal = False
     # Pass through every empty cell at the top of a column and remove cards below
+    rebuild_top_empty(state)
     for col, row in enumerate(state.top_empty_cell):
 
         # If the last card removed was a horizontal card, then this will be the second cell of the same card, ignore it
@@ -138,6 +149,11 @@ def generate_next_removed_board_states(state):
 
         if row > 0:
             card_below = state.board[row - 1, col].card
+
+            # Don't move this card if it was the last card moved
+            if card_below.id == state.last_moved_card.id:
+                continue
+
             if card_below.horizontal:
                 if col < GameConstants.NUM_COLS and row == state.top_empty_cell[col + 1] \
                         and card_below is state.board[row - 1, col + 1].card:
@@ -150,10 +166,22 @@ def generate_next_removed_board_states(state):
             #  This is a legal vertical or Horizontal card that can be removed
             new_state = copy.deepcopy(state)
             BoardHelper.remove_cells(card_below.coords1, card_below.coords2, new_state)
+            rebuild_top_empty(new_state)
             state_list.append((new_state, card_below))
 
     return state_list
 
+
+def rebuild_top_empty(state):
+
+    top_empty = [0]*GameConstants.NUM_COLS
+    for col in range(GameConstants.NUM_COLS):
+        for row in range(GameConstants.NUM_ROWS):
+            if state.board[row][col].card:
+                top_empty[col] += 1
+            else:
+                break
+    state.top_empty_cell = top_empty
 
 def mini_max(state, depth, alpha, beta, maximizing_player, heuristic):
     """

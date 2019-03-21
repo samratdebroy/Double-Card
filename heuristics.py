@@ -95,10 +95,14 @@ def open_competition_heuristic(state):
     fill_counter = []
 
     # Check streaks, moving up along first column
+    max_row = max(state.top_empty_cell) - 1
+
     for row in range(0, GameConstants.NUM_ROWS):
-        # Check Horizontally
-        color_counter.extend(BoardHelper.count_open_streaks_along_line(Cell.get_color, row, 0, Dir.RIGHT, state.board))
-        fill_counter.extend(BoardHelper.count_open_streaks_along_line(Cell.get_fill, row, 0, Dir.RIGHT, state.board))
+
+        if row < max_row:
+            # Check Horizontally
+            color_counter.extend(BoardHelper.count_open_streaks_along_line(Cell.get_color, row, 0, Dir.RIGHT, state.board))
+            fill_counter.extend(BoardHelper.count_open_streaks_along_line(Cell.get_fill, row, 0, Dir.RIGHT, state.board))
 
         # Check Ascending Diagonals
         color_counter.extend(BoardHelper.count_open_streaks_along_line(Cell.get_color, row, 0, Dir.DIAG_UR, state.board))
@@ -141,8 +145,11 @@ def test_heuristic(state):
     color_streak = 1
     fill_streak = 1
     heuristic_val = 0
+
+    max_row = max(state.top_empty_cell) - 1
+
     # check horizontal
-    for row in range(0, GameConstants.NUM_ROWS):
+    for row in range(0, max_row):
         color_streak = 1
         fill_streak = 1
         for col in range(0, GameConstants.NUM_COLS-1):

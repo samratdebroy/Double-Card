@@ -259,12 +259,13 @@ class HumanPlayer(Player):
         # Ensure that there is no card above selected card
         above_coord2 = tuple((coord2 + Dir.UP).tolist())
         above_coord1 = tuple((coord1 + Dir.UP).tolist())
-        if state.board[above_coord2].card or (state.board[above_coord1].card and old_card.horizontal):
-            print('The cells above the old coordinates are occupied. {}:{} and {}:{} cannot be moved since'
-                  ' otherwise the cards above will float over empty cells'
-                  .format(coord1[0] + 1, self.column_idx_to_letter[coord1[1]],
-                          coord1[0] + 1, self.column_idx_to_letter[coord1[1] + 1]))
-            return None
+        if above_coord2[0] < GameConstants.NUM_ROWS and above_coord1[0] < GameConstants.NUM_ROWS:
+            if state.board[above_coord2].card or (state.board[above_coord1].card and old_card.horizontal):
+                print('The cells above the old coordinates are occupied. {}:{} and {}:{} cannot be moved since'
+                      ' otherwise the cards above will float over empty cells'
+                      .format(coord1[0] + 1, self.column_idx_to_letter[coord1[1]],
+                              coord1[0] + 1, self.column_idx_to_letter[coord1[1] + 1]))
+                return None
 
         # Ensure that the card is in either a new coord or orientation
         # check coord. of first half
