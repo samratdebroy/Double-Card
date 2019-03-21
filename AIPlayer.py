@@ -15,7 +15,9 @@ class AIPlayer(Player):
         maximizing_player = (self.winning_token == Player.COLOR_WIN)
 
         # Grab the next desired state from the minimax algorithm
-        next_state, heuristic_val = mini_max(state, GameConstants.MINI_MAX_DEPTH, maximizing_player, self.heuristic)
+        alpha =  float('-inf')
+        beta =  float('inf')
+        next_state, heuristic_val = mini_max(state, GameConstants.MINI_MAX_DEPTH, alpha, beta, maximizing_player, self.heuristic)
         print("heuristic_val of this move was: " + str(heuristic_val))
 
         if GameConstants.TRACE_MODE:
@@ -153,7 +155,7 @@ def generate_next_removed_board_states(state):
     return state_list
 
 
-def mini_max(state, depth, maximizing_player, heuristic):
+def mini_max(state, depth, alpha, beta, maximizing_player, heuristic):
     """
     Given the current state of the game, finds next best move using minimax algorithm
     :param state: current board state
@@ -172,9 +174,13 @@ def mini_max(state, depth, maximizing_player, heuristic):
         value = float('-inf')
         best_next_state = None
         for next_state in generate_next_board_states(state):
-            new_state, new_value = mini_max(next_state, depth - 1, False, heuristic)
+            new_state, new_value = mini_max(next_state, depth - 1, alpha, beta, False, heuristic)
             if new_value > value:
                 value = new_value
+                alpha = max(alpha, value)
+                if alpha >= beta:
+                    break
+
                 if depth == GameConstants.MINI_MAX_DEPTH:
                     best_next_state = new_state  # Only want the child of roots to be returned
                 else:
@@ -190,10 +196,14 @@ def mini_max(state, depth, maximizing_player, heuristic):
         value = float('inf')
         best_next_state = None
         for next_state in generate_next_board_states(state):
-            new_state, new_value = mini_max(next_state, depth - 1, True, heuristic)
+            new_state, new_value = mini_max(next_state, depth - 1, alpha, beta, True, heuristic)
 
             if new_value < value:
                 value = new_value
+                beta = min(beta, value)
+                if alpha >= beta:
+                    break
+
                 if depth == GameConstants.MINI_MAX_DEPTH:
                     best_next_state = new_state  # Only want the child of roots to be returned
                 else:
