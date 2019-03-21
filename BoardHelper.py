@@ -191,10 +191,28 @@ def count_open_streaks_along_line(val_checker, row, col, dir, board):
                 # Ensure either end of this streak is empty
                 prev_coord = (row - dir[0], col - dir[1])
                 next_coord = (row + dir[0] * streak_count, col + dir[1] * streak_count)
-                if streak_count >= 4 \
-                        or (within_bounds(next_coord[0], next_coord[1]) and not val_checker(board[next_coord[0], next_coord[1]]))\
-                        or (within_bounds(prev_coord[0], prev_coord[1]) and not val_checker(board[prev_coord[0], prev_coord[1]])):
-                    streak_list.append(streak_count)
+
+                prev_coord_empty = (within_bounds(next_coord[0], next_coord[1]) and not val_checker(board[next_coord[0], next_coord[1]]))
+                next_coord_empty = (within_bounds(prev_coord[0], prev_coord[1]) and not val_checker(board[prev_coord[0], prev_coord[1]]))
+
+                if streak_count >= 4:
+                    streak_list.append(4)
+                elif prev_coord_empty or next_coord_empty:
+
+                    if streak_count == 3 and prev_coord_empty and next_coord_empty:
+
+                        # Check if it is a doubly-open triple-streak
+                        prev_coord_below = (prev_coord[0] - 2, prev_coord[1])
+                        next_coord_below = (next_coord[0] - 2, next_coord[1])
+                        if ((not within_bounds(next_coord_below[0], next_coord_below[1])
+                                 or board[next_coord_below[0], next_coord_below[1]].card))\
+                            and (not within_bounds(prev_coord_below[0], prev_coord_below[1])
+                                 or board[prev_coord_below[0], prev_coord_below[1]].card):
+                            streak_list.append(5)
+                        else:
+                            streak_list.append(3)
+                    else:
+                        streak_list.append(streak_count)
             else:
                 streak_count = 1
 

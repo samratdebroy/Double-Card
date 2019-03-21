@@ -131,6 +131,7 @@ def open_competition_heuristic(state):
     heuristic_val += color_counter.count(1) - fill_counter.count(1)
     heuristic_val += (color_counter.count(2) - fill_counter.count(2)) * 30
     heuristic_val += (color_counter.count(3) - fill_counter.count(3)) * 200000
+    heuristic_val += (color_counter.count(5) - fill_counter.count(5)) * 20000000
 
     if not state.maximizing:
         sign = 1

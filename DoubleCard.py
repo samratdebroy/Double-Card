@@ -169,6 +169,9 @@ class DoubleCard:
             elif self.state.winner == Player.DOT_WIN:
                 print("Dots Player has won the game!!!")
 
+        if self.state.turn_number == 40:
+            print("Draw has been reached, game over")
+
     def set_recycle_mode(self):
         if self.state.turn_number >= GameConstants.MAX_CARDS_IN_GAME:
             self.state.recycling_mode = True
